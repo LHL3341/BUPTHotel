@@ -78,13 +78,13 @@ class UserInfo:
 class DeviceStatus:
     """device_status"""
     working: bool
-    mode: bool
+    mode: str
     env_temperature: float
     target_temperature: float
     speed: str
     total_cost: float
 
-    def __init__(self, working: bool, mode: bool, env_temperature: float,target_temperature: float,speed: str,total_cost: float) -> None:
+    def __init__(self, working: bool, mode: str, env_temperature: float,target_temperature: float,speed: str,total_cost: float) -> None:
         self.working = working
         self.mode = mode
         self.env_temperature = env_temperature
@@ -247,15 +247,12 @@ class LogEntry:
     request_time: datetime
     start_time: datetime
     end_time: datetime
-    served_time: datetime
-    is_on: bool
-    env_temperature: float
-    target_temperature: float
-    mode: str
+    duration: datetime
     speed: int
-    cost: float
-    price: float
-    username: str
+    period_cost: float
+    fee_rate:float
+    from_tem: float
+    to_tem: float
     
 
     def __init__(self,
@@ -263,28 +260,23 @@ class LogEntry:
                 request_time: datetime,
                 start_time: datetime,
                 end_time: datetime,
-                served_time: datetime,
-                is_on: bool,
-                env_temperature: float,
-                target_temperature: float,
-                mode: str,
+                duration: datetime,
                 speed: int,
-                cost: float,
-                price: float,
-                username: str) -> None:
+                period_cost: float,
+                fee_rate: float,
+                from_tem: float,
+                to_tem: float
+                ) -> None:
         self.room= room
         self.request_time=request_time
         self.start_time=start_time
         self.end_time=end_time
-        self.served_time=served_time
-        self.is_on=is_on
-        self.env_temperature=env_temperature
-        self.target_temperature=target_temperature
-        self.mode=mode
+        self.duration=duration
         self.speed=speed
-        self.cost=cost
-        self.price=price
-        self.username=username
+        self.period_cost=period_cost
+        self.fee_rate = fee_rate
+        self.from_tem=from_tem
+        self.to_tem=to_tem
 
     def Find_log_entry(self,room_input):#对log_entry表查询
         db = pymysql.connect(host="localhost", user=USER, password=PASSWORD, database=SCHEMAS)
@@ -300,15 +292,12 @@ class LogEntry:
                     self.request_time=results[i][1]
                     self.start_time=results[i][2]
                     self.end_time=results[i][3]
-                    self.served_time=results[i][4]
-                    self.is_on=results[i][5]
-                    self.env_temperature=results[i][6]
-                    self.target_temperature=results[i][7]
-                    self.mode=results[i][8]
-                    self.speed=results[i][9]
-                    self.cost=results[i][10]
-                    self.price=results[i][11]
-                    self.username=results[i][12]
+                    self.duration=results[i][4]
+                    self.speed=results[i][5]
+                    self.period_cost=results[i][6]
+                    self.fee_rate=results[i][7]
+                    self.from_tem=results[i][8]
+                    self.to_tem=results[i][9]
                     ErrorCount = ErrorCount + 1
             if ErrorCount == 0:
                 print("此房间号不存在！")
@@ -325,22 +314,19 @@ class LogEntry:
     def Insert_log_entry(self):
         db = pymysql.connect(host="localhost", user=USER,password=PASSWORD,database=SCHEMAS)
         cur = db.cursor()
-        sqlQuery = " INSERT INTO log_entry (room,request_time,start_time,served_time,is_on,env_temperature,target_temperature,mode,speed,cost,price,username)\
-              VALUE (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "#表格选取
+        sqlQuery = " INSERT INTO log_entry (room,request_time,start_time,end_time,duration,speed,period_cost,fee_rate,from_tem,to_tem)\
+              VALUE (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "#表格选取
         value = (
                 self.room,
                 self.request_time,
                 self.start_time,
                 self.end_time,
-                self.served_time,
-                self.is_on,
-                self.env_temperature,
-                self.target_temperature,
-                self.mode,
+                self.duration,
                 self.speed,
-                self.cost,
-                self.price,
-                self.username)
+                self.period_cost,
+                self.fee_rate,
+                self.from_tem,
+                self.to_tem)
         try:
             cur.execute(sqlQuery, value)
             db.commit()
@@ -352,21 +338,22 @@ class LogEntry:
         finally:
             db.close()
 
-    def Export_room_log(room,check_in,check_out):
-        
-        db = pymysql.connect(host="localhost", user=USER,password=PASSWORD,database=SCHEMAS)
-        cur = db.cursor()
-        sqlQuery = f"SELECT * FROM log_entry WHERE room = {room} AND time BETWEEN '{check_in}' AND '{check_out}'"#表格选取
-        try:
-            cur.execute(sqlQuery)
-            results = cur.fetchall()
-            return results
-        except pymysql.Error as error:
-            print("数据加载失败：" + str(error))
-            db.rollback()
-            return 0
-        finally:
-            db.close()
+def Export_room_log(room,check_in,check_out):
+    
+    db = pymysql.connect(host="localhost", user=USER,password=PASSWORD,database=SCHEMAS)
+    cur = db.cursor()
+    sqlQuery = f"SELECT * FROM log_entry WHERE room = '{room}' AND request_time BETWEEN '{check_in}' AND '{check_out}'"#表格选取
+    try:
+        cur.execute(sqlQuery)
+        results = cur.fetchall()
+        print(results)
+        return results
+    except pymysql.Error as error:
+        print("数据加载失败：" + str(error))
+        db.rollback()
+        return 0
+    finally:
+        db.close()
 
 
 

@@ -6,7 +6,7 @@ os.chdir(os.path.abspath('./Client/'))
 print(os.path.abspath('.'))
 from entity import *
 
-from PyQt5.QtWidgets import QApplication, QListWidgetItem
+from PyQt5.QtWidgets import QApplication, QListWidgetItem,QTableWidgetItem
 from MainWindow import MainUi
 from LoginWindow import LoginUi
 from UserSelectWindow import UserSelectUi
@@ -24,9 +24,10 @@ FREQ = 600
 
 # 利用一个控制器来控制页面的跳转
 class Controller:
-    def __init__(self):
+    def __init__(self,username):
+        self.username = username
         self.timer = QTimer()
-        self.timer.timeout.connect(self.update_panel)
+        self.timer.timeout.connect(self.timer_event)
         self.room_options = {
             1: ['101', '102', '103', '104', '105', '106', '107', '108', '109', '110'],
             2: ['201', '202', '203', '204', '205', '206', '207', '208', '209', '210'],
@@ -55,6 +56,8 @@ class Controller:
 
         self.manager_bill = ManagerBillUi()
         self.manager_bill.pushButton_return.clicked.connect(self.show_main)
+        self.manager_bill.listWidget_room.itemClicked.connect(self.get_room_status)
+        self.manager_bill.pushButton_checkout.clicked.connect(self.check_out)
         self.manager_bill.comboBox_floor.currentIndexChanged.connect(self.change_list)
 
 
@@ -82,11 +85,12 @@ class Controller:
         room = self.userselect.comboBox_room.currentText()
         if floor[0] =='点'or room[0] == '点':
             return
-        response = requests.post(SERVERADDR+f'/check_in?room_id={room[:3]}',json={"guest_name":1})
+        response = requests.post(SERVERADDR+f'/check_in?room_id={room[:3]}',json={"guest_name":self.username})
         if json.loads(response.text)['status'] == "success!":
             self.floor = int(floor[0])
             self.room = room[:3]
             self.usercontrol.roomid = self.room
+            self.pos = 'guest'
             self.userselect.close()
             self.usercontrol.show()
 
@@ -100,16 +104,20 @@ class Controller:
         self.login.show()
 
     def show_manager_air(self):
+        self.timer.start(FREQ)
         self.login.close()
         self.manager_air.stackedWidget.setCurrentIndex(0)
         self.manager_air.pushButton_5.clicked.connect(self.central_control)
+        self.pos = 'air_admin'
         self.manager_air.show()
 
     def show_manager_bill(self):
+        self.timer.start(FREQ)
         self.login.close()
         self.manager_bill.stackedWidget.setCurrentIndex(0)
         self.manager_bill.listWidget_room.clear()
         self.manager_bill.comboBox_floor.setCurrentIndex(0)
+        self.pos = 'reception'
         self.manager_bill.show()
 
     def log_in(self):
@@ -155,15 +163,20 @@ class Controller:
         response = json.loads(response.text)
         past_state = DeviceStatus(**response)
         speed = {'low':0,'mid':1,'high':2}
+        arg = {
+            "current_room_temp":past_state.env_temperature,
+            "target_temp":past_state.target_temperature,
+            "speed":past_state.speed
+        }
 
         if (not past_state.working) and option != 0:
             return
         if option == 0:
             past_state.working = (past_state.working+1)%2
             if past_state.working:
-                response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'turn_on',"args":[]})
+                response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'turn_on',"args":arg})
             else:
-                response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'turn_off',"args":[]})
+                response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'turn_off',"args":arg})
         elif option ==1:
             if past_state.speed == 'low':
                 past_state.speed = 'mid'
@@ -171,14 +184,16 @@ class Controller:
                 past_state.speed = 'high'    
             elif past_state.speed == 'high':
                 past_state.speed = 'low'
-
-            response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'set_speed',"args":past_state.speed})
+            arg['speed'] = past_state.speed
+            response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'set_speed',"args":arg})
         elif option == 2:
             past_state.target_temperature +=1
-            response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'set_temperature',"args":past_state.target_temperature})
+            arg['target_temp'] = past_state.target_temperature
+            response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'set_temperature',"args":arg})
         elif option == 3:
             past_state.target_temperature -=1
-            response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'set_temperature',"args":past_state.target_temperature})
+            arg['target_temp'] = past_state.target_temperature
+            response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'set_temperature',"args":arg})
 
         panel.isopen = past_state.working
         panel.current_speed = past_state.speed
@@ -191,12 +206,18 @@ class Controller:
         window = self.manager_air
         
         limit = [int(window.lineEdit_min.text()),int(window.lineEdit_max.text())]
-        cost = [float(window.lineEdit_low.text()),float(window.lineEdit_middle.text()),float(window.lineEdit_high.text())]
-        requests.post(SERVERADDR+'/admin_control',json={"command":'set_valid_range',"args":limit})
-        requests.post(SERVERADDR+'/admin_control',json={"command":'set_mode',"args":1})
-        requests.post(SERVERADDR+'/admin_control',json={"command":'turn_on',"args":[]})
-        requests.post(SERVERADDR+'/admin_control',json={"command":'turn_off',"args":[]})
-        requests.post(SERVERADDR+'/admin_control',json={"command":'set_price',"args":cost})
+        fee_rate = float(window.lineEdit_low.text())
+        arg = {
+            "mode":"warm",
+            "fee_rate":fee_rate,
+            "valid_range_low":limit[0],
+            "valid_range_high":limit[1]
+        }
+        requests.post(SERVERADDR+'/admin_control',json={"command":'set_valid_range',"args":arg})
+        requests.post(SERVERADDR+'/admin_control',json={"command":'set_mode',"args":arg})
+        requests.post(SERVERADDR+'/admin_control',json={"command":'turn_on',"args":arg})
+        requests.post(SERVERADDR+'/admin_control',json={"command":'turn_off',"args":arg})
+        requests.post(SERVERADDR+'/admin_control',json={"command":'set_price',"args":arg})
 
     def update_panel(self):
         panel = self.usercontrol
@@ -225,19 +246,63 @@ class Controller:
     def check_out(self):
         # 前台退房，调用服务器@app.post('/{room_id}/check_out')接口
         #response = requests.post(SERVERADDR+f'/{room_id}/check_out')
-        pass
+        response = requests.post(SERVERADDR+f'/check_in?room_id={self.usercontrol.roomid[:3]}',json={"guest_name":self.username})
+        
+        print(response.text)
+        print(self.usercontrol.roomid, '退房成功')
 
-    def get_room_status(self):
+    def get_room_status(self, item):
         # 前台查看房间状态，例如
         #response = requests.get(SERVERADDR+'/state/rooms/101')
         #res = json.loads(response.text)获取该房间状态
         #然后将其显示到前端
-        pass
+        room_id = item.text()
+        res = requests.get(SERVERADDR +f'/get_device_status?device_id={room_id}')
+        res = json.loads(response.text)
+        state = DeviceStatus(**res)
+        """
+        print(str(res.get('check_in_time', '')))
+        check_in_time1 = str(res.get('check_in_time'))
+        check_in_time2 = check_in_time1.split(".")[0]
+        check_in_time3 = check_in_time2.replace("T", " ")
+        temperature = QTableWidgetItem(str(res.get('temperature', '')))
+        totalcost = QTableWidgetItem(str(res.get('totalcost', '')))
+        if check_in_time3 == '0':
+            check_in_time = QTableWidgetItem('未入住')
+        else:
+            check_in_time = QTableWidgetItem(check_in_time3)
+        self.manager_bill.tableWidget_status.setItem(0, 0, check_in_time)
+        """
+        #print(str(res.get('check_in_time', '')))
+
+        if res['working'] == 0:
+            is_on = QTableWidgetItem('关机')
+        else:
+            is_on = QTableWidgetItem('开机')
+        self.manager_bill.tableWidget_status.setItem(0, 0, is_on)
+        self.manager_bill.tableWidget_status.setItem(1, 0, QTableWidgetItem(str(state.mode)))
+        self.manager_bill.tableWidget_status.setItem(2, 0, QTableWidgetItem(str(state.env_temperature)))
+        self.manager_bill.tableWidget_status.setItem(3, 0, QTableWidgetItem(str(state.target_temperature)))
+        self.manager_bill.tableWidget_status.setItem(4, 0, QTableWidgetItem(str(state.speed)))
+        self.manager_bill.tableWidget_status.setItem(5, 0, QTableWidgetItem(str(state.total_cost)))
 
     def monitor(self):
         # 空调管理员监控各空调状态，前端界面需要一目了然
         # 用@app.get('/state/rooms')接口获取空调状态
+        #self.timer.start(FREQ)
+        response = requests.get(SERVERADDR+'/get_all_device_status')
+        res=response.text
+        res=json.loads(res)
+        self.manager_air.addItem(res)
         pass
+
+    def timer_event(self):
+        if self.pos == 'guest':
+            self.update_panel()
+        elif self.pos == 'air_admin':
+            self.monitor()
+        elif self.pos == 'reception':
+            pass
 
 if __name__ == '__main__':
     try:
@@ -250,16 +315,16 @@ if __name__ == '__main__':
         print(response.text)
         QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         app = QApplication(sys.argv)
-        controller = Controller()
+        controller = Controller('109c')
         controller.show_main()
-        controller1 = Controller()
-        controller1.show_main()
-        controller2 = Controller()
-        controller2.show_main()
-        controller3 = Controller()
-        controller3.show_main()
-        controller4 = Controller()
-        controller4.show_main()
+        #controller1 = Controller('113f')
+        #controller1.show_main()
+        #controller2 = Controller()
+        #controller2.show_main()
+        #controller3 = Controller()
+        #controller3.show_main()
+        #controller4 = Controller()
+        #controller4.show_main()
         sys.exit(app.exec_())
 
     except Exception as e:

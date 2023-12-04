@@ -149,7 +149,7 @@
         </font>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="page_report">
         <widget class="QTableWidget" name="tableWidget_report">
@@ -318,94 +318,16 @@
                <pointsize>12</pointsize>
               </font>
              </property>
-             <property name="editTriggers">
-              <set>QAbstractItemView::NoEditTriggers</set>
-             </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
-             </property>
             </widget>
-            <widget class="QTableWidget" name="tableWidget_status">
+            <widget class="QTextBrowser" name="textBrowser_bill">
              <property name="geometry">
               <rect>
-               <x>126</x>
-               <y>23</y>
-               <width>313</width>
-               <height>195</height>
+               <x>122</x>
+               <y>4</y>
+               <width>305</width>
+               <height>219</height>
               </rect>
              </property>
-             <property name="font">
-              <font>
-               <pointsize>13</pointsize>
-              </font>
-             </property>
-             <property name="frameShadow">
-              <enum>QFrame::Sunken</enum>
-             </property>
-             <property name="editTriggers">
-              <set>QAbstractItemView::NoEditTriggers</set>
-             </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
-             </property>
-             <property name="horizontalScrollMode">
-              <enum>QAbstractItemView::ScrollPerPixel</enum>
-             </property>
-             <attribute name="horizontalHeaderVisible">
-              <bool>false</bool>
-             </attribute>
-             <attribute name="horizontalHeaderCascadingSectionResizes">
-              <bool>false</bool>
-             </attribute>
-             <attribute name="horizontalHeaderDefaultSectionSize">
-              <number>200</number>
-             </attribute>
-             <attribute name="verticalHeaderCascadingSectionResizes">
-              <bool>false</bool>
-             </attribute>
-             <attribute name="verticalHeaderDefaultSectionSize">
-              <number>32</number>
-             </attribute>
-             <row>
-              <property name="text">
-               <string>空调电源</string>
-              </property>
-             </row>
-             <row>
-              <property name="text">
-               <string>模式</string>
-              </property>
-             </row>
-             <row>
-              <property name="text">
-               <string>当前温度</string>
-              </property>
-             </row>
-             <row>
-              <property name="text">
-               <string>目标温度</string>
-              </property>
-             </row>
-             <row>
-              <property name="text">
-               <string>风速</string>
-              </property>
-             </row>
-             <row>
-              <property name="text">
-               <string>总费用</string>
-              </property>
-             </row>
-             <column>
-              <property name="text">
-               <string>New Column</string>
-              </property>
-             </column>
-             <item row="0" column="0">
-              <property name="text">
-               <string/>
-              </property>
-             </item>
             </widget>
            </widget>
           </item>

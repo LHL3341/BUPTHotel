@@ -11,7 +11,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 DEFAULT_TARGET_TEMP = 25
 TIMESLICE = 10
 FREQ = 1
-SPEED = {'low':0,'mid':1,'high':2}
+DEFAULT_CHECKOUT = datetime(2035,1,1)
+SPEED = {'low':1,'mid':2,'high':3}
 
 class Room:
     #房间
@@ -20,9 +21,9 @@ class Room:
         self.isused = False
         self.default_tmp = 25
         self.checkin = datetime.now()
-        self.checkout = datetime.now()
+        self.checkout = DEFAULT_CHECKOUT
         self.username = ''
-        self.device = DeviceStatus(False,False,24,DEFAULT_TARGET_TEMP,'mid',0)
+        self.device = DeviceStatus(False,'warm',24,DEFAULT_TARGET_TEMP,'mid',0)
 
     def get_status(self):
         return self.device
@@ -53,13 +54,18 @@ class Task:
     start_time:datetime
     end_time:datetime
     served_time:float
+    start_tmp:float
+    end_tmp:float
+    cost:float
     
-    def __init__(self, roomid,speed):
+    def __init__(self, roomid,speed,start_tmp):
         self.request_time = datetime.now()
         self.roomid = roomid
         self.speed =speed
         self.start_time = None
+        self.start_tmp = start_tmp
         self.served_time = 0
+        self.cost =0
 
 class Scheduler:
     #调度器
@@ -84,9 +90,9 @@ class Scheduler:
         print(maxid)
         return maxid
         
-    def addItem(self,roomid,speed):
+    def addItem(self,roomid,speed,env_tmp):
         # 收到新的请求
-        item = Task(roomid,speed)
+        item = Task(roomid,speed,env_tmp)
         time = datetime.now()
         i = self.isEmpty()
         if i >=0:
@@ -108,12 +114,22 @@ class Scheduler:
         for k,v in self.serving_list.items():
             if v != None and roomid == v.roomid:
                 self.serving_list[k] = None
+                room = hotel.rooms[roomid]
+                device = room.device
                 v.end_time = datetime.now()
+                v.end_tmp = device.env_temperature
                 break
-        room = hotel.rooms[roomid]
-        device = room.device
-        LogEntry(v.roomid,v.request_time,v.start_time,v.end_time,v.served_time,device.working,device.env_temperature,
-                 device.target_temperature,device.mode,device.speed,device.totalcost,room.username).Insert_log_entry()
+        LogEntry(v.roomid,
+                 v.request_time,
+                 v.start_time,
+                 v.end_time,
+                 v.served_time,
+                 v.speed,
+                 v.cost,
+                 hotel.central.cost,
+                 v.start_tmp,
+                 v.end_tmp
+                 ).Insert_log_entry()
         self.Insert()
 
     def Insert(self, priority=[2,1,0]):
@@ -128,15 +144,15 @@ class Scheduler:
                 waitlist.remove(waitlist[0])
                 break
 
-    def Request(self,roomid,speed):
-        item = Task(roomid,speed)
+    def Request(self,roomid,speed,env_tmp):
+        item = Task(roomid,speed,env_tmp)
         self.wait_list[speed].append(item)        
 
     def clear(self):
-        for k, v in self.wait_list:
+        for k, v in self.wait_list.items():
             for i in v:
                 self.RemoveItem(i.roomid)
-        for k, v in self.serving_list:
+        for k, v in self.serving_list.items():
             self.RemoveItem(v.roomid)
         self.wait_list = {0:[],1:[],2:[]}
         self.serving_list = {0:None,1:None,2:None}
@@ -148,9 +164,9 @@ class CentralAir:
     def __init__(self):
         self.scheduler = Scheduler()
         self.isopen = True  #总开关
-        self.cost = [0.5,1,2] #低中高速风费率
+        self.cost = 1 #费率
         self.limit = [16,24]  #温度范围
-        self.mode = True
+        self.mode = 'warm'
 
 class Hotel:
     #酒店
@@ -236,7 +252,8 @@ async def timer_event():
     for k, v in servelist.items():
         if v != None:
             device = hotel.rooms[v.roomid].device
-            device.total_cost += cost[SPEED[device.speed]]*(FREQ/60)
+            device.total_cost += cost*SPEED[device.speed]*(FREQ/60)
+            v.cost += cost*SPEED[device.speed]*(FREQ/60)
             v.served_time += FREQ
         
     # 调度
@@ -275,11 +292,11 @@ async def update_temp():
 async def root():
     return {"message": "成功连接到服务器！"}
 
-@app.post("/login")
+@app.get("/login")
 async def login():
     return {"status":"login success"}
 
-@app.post("/logout")
+@app.get("/logout")
 async def logout():
     return {"status":"logouted"}
 
@@ -291,23 +308,30 @@ async def remote_control(device_id, body=Body(None)):
     room = hotel.rooms[device_id]
     if command == "turn_on":
         room.device.working = True
-        scheduler.addItem(device_id,SPEED[room.device.speed])
+        scheduler.addItem(device_id,SPEED[room.device.speed],room.device.env_temperature)
         
     elif command == "turn_off":
         room.device.working = False
         scheduler.RemoveItem(device_id)
 
     elif command == "set_temperature":
-        room.device.target_temperature = args
+        room.device.target_temperature = args["target_temp"]
 
     elif command == "set_speed":
-        room.device.speed = args
+        room.device.speed = args["speed"]
         scheduler.RemoveItem(device_id)
-        scheduler.addItem(device_id,SPEED[room.device.speed])
+        scheduler.addItem(device_id,SPEED[room.device.speed],room.device.env_temperature)
         
     #hotel.updatedevice(DeviceStatus(**new_state))
     # TODO:产生一条详单记录 Logentry
     return {"status":"success!"}
+
+@app.get('/get_panel_status')
+async def update_panel(device_id):
+    dic = hotel.getroomstate(device_id).__dict__
+    del dic['mode']
+    del dic['total_cost']
+    return dic
 
 @app.post('/admin_control')
 async def admin_control(body=Body(None)):
@@ -322,24 +346,29 @@ async def admin_control(body=Body(None)):
         for k, v in hotel.rooms.items():
             v.device.working = False
     elif command == "set_mode":
-        hotel.central.mode = args
+        hotel.central.mode = args["mode"]
     #TODO
     elif command == "set_valid_range":
         hotel.central.limit = args
         for k, v in hotel.rooms.items():
             past_temp = v.device.target_temperature
-            v.device.target_temperature = max(args[0],past_temp)
-            v.device.target_temperature = min(args[1],v.device.target_temperature)
+            v.device.target_temperature = max(args["valid_range_low"],past_temp)
+            v.device.target_temperature = min(args["valid_range_high"],v.device.target_temperature)
     #TODO
     elif command == "set_price":
-        hotel.central.cost = args
+        hotel.central.cost = args["fee_rate"]
         #TODO
 
     return {"status":"success!"}
 
 @app.get('/get_all_device_status')
 async def get_all_device_status():
-    return [hotel.getroomstate(key).__dict__ for key, value in hotel.rooms.items()]
+    res = []
+    for key, value in hotel.rooms.items():
+        dic = hotel.getroomstate(key).__dict__.copy()
+        dic["room_id"] = key
+        res.append(dic)
+    return res
 
 @app.get('/get_device_status')
 async def get_device_status(device_id):
@@ -353,11 +382,9 @@ async def check_in(room_id, body=Body(None)):
         room = hotel.rooms[room_id]
         room.isused = True
         room.checkin = datetime.now()
-        room.username = guest_name
-        room.device = DeviceStatus(False,False,24,DEFAULT_TARGET_TEMP,'mid',0)
-        
-        #hotel.updateroom(newstate)
-        # TODO:产生一条详单记录 Logentry
+        room.username = str(guest_name)
+        print(room.username+'入住')
+        room.device = DeviceStatus(False,'warm',24,DEFAULT_TARGET_TEMP,'mid',0)
     
     return {"status":"success!"}
 
@@ -368,7 +395,7 @@ async def check_out(room_id, body=Body(None)):
     if not hotel.rooms[room_id].isused:
         room = hotel.rooms[room_id]
         room.isused = False
-        room.checkout = datetime.now()
+        room.checkout = DEFAULT_CHECKOUT
         room.username = ''
         room.device = DeviceStatus(False,False,24,DEFAULT_TARGET_TEMP,'mid',0)
         #hotel.updateroom(newstate)
@@ -376,7 +403,6 @@ async def check_out(room_id, body=Body(None)):
     return {"status":"success!"}
 
 @app.get('/bill_cost')
-
 async def get_bill(guest_name):
     """
     计算账单
@@ -384,17 +410,39 @@ async def get_bill(guest_name):
     返回空调费和房费
     房费500每晚，空调费根据详单和费率计算
     """
+    for k,v in hotel.rooms.items():
+        if v.username == guest_name:
+            room = v
+            res = Export_room_log(room.roomid,room.checkin,room.checkout)
+            ttcost = 0
+            for entry in res:
+                ttcost += entry[6]
+                print(entry[6])
+            print(guest_name+'共花费'+str(ttcost))
+            res = {
+                'total_cost':ttcost,
+                'check_in_time':room.checkin,
+                'check_out_time':room.checkout,
+                'room_id':room.roomid
+            }
+            return res
+    print("用户不存在")
+    return {"detail":"用户不存在"}
+    
 
-    pass
 
 @app.get('/bill_detail')
 async def get_log(guest_name):
     """
     返回某个房间的详单
     """
-    check_in_t, check_out_t = hotel.rooms[room_id].check_in_time, hotel.rooms[room_id].check_out_time
-    res = Export_room_log(room_id,check_in_t,check_out_t)
-    return res
+    for k,v in hotel.rooms.items():
+        if v.username == guest_name:
+            room = v
+            res = Export_room_log(room.roomid,room.checkin,room.checkout)
+            return res
+    print("用户不存在")
+    return {"detail":"用户不存在"}
 
 @app.post('/get_daily_report')
 async def get_daily_report(body=Body(None)):
