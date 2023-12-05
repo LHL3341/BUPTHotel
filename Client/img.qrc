@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="picture">
+    <file>images/background.jpg</file>
+  </qresource>
+  <qresource prefix="icon">
+    <file>images/xiaoren.png</file>
+    <file>images/xiaohui.png</file>
+  </qresource>
+</RCC>

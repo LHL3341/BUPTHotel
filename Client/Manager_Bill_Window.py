@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QWidget
-from PyQt5 import uic
+from PyQt5.QtWidgets import QWidget, QLabel
+from PyQt5 import uic, QtWidgets
+from PyQt5.QtGui import QPixmap
 Ui_Manager_Bill, ManagerBillBase = uic.loadUiType("./ui/manager_bill.ui")
 
 
@@ -11,7 +12,9 @@ class ManagerBillUi(QWidget, Ui_Manager_Bill):
 
         self.pushButton_report.clicked.connect(self.display1)
         self.pushButton_checkinout.clicked.connect(self.display2)
-
+        self.use_background()
+        self.tableWidget_status.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+        self.tableWidget_status.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
     def display1(self):
         self.stackedWidget.setCurrentIndex(0)
 
@@ -30,3 +33,10 @@ class ManagerBillUi(QWidget, Ui_Manager_Bill):
             self.stackedWidget_3.setCurrentIndex(index + 1)
     '''
 
+    def use_background(self):
+        # 创建 QLabel 以显示背景图像
+        background_label = QLabel(self)
+        pixmap = QPixmap("images/background.jpg")
+        background_label.setPixmap(pixmap)
+        background_label.setGeometry(0, 0, pixmap.width(), pixmap.height())
+        background_label.lower()  # 将其置于底层

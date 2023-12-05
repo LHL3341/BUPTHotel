@@ -23,153 +23,306 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>波普特酒店温控系统</string>
+   <string>Bupt Air Conditioner</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../img.qrc">
+    <normaloff>:/icon/images/xiaohui.png</normaloff>:/icon/images/xiaohui.png</iconset>
   </property>
   <property name="toolTipDuration">
    <number>-1</number>
   </property>
-  <widget class="QComboBox" name="comboBox_floor">
+  <property name="styleSheet">
+   <string notr="true">*{
+	font-family:century gothic;
+
+}
+
+#Form{
+	background:url(:/picture/images/background.jpg);
+}
+QFrame
+{
+	background:#333;
+	border-radius:15px;
+}
+
+
+QToolButton
+{
+
+background:red;
+border-radius:60px;
+}
+
+QLabel
+{
+	color:white;
+}
+
+QPushButton
+{
+background:red;
+color:white;
+border-radius:15px;
+}
+
+QPushButton:hover
+{
+
+color:red;
+border-radius:15px;
+background:#49ebff;
+}
+
+QComboBox{
+background:white;
+color:black;
+border-radius:0px;
+}
+
+QComboBox QAbstractItemView {
+border-radius:0px;
+    outline: 0px solid gray;   /* 选定项的虚框 */
+    color: white;
+    background-color: #333;   /* 整个下拉窗体的背景色 */
+     /* 整个下拉窗体被选中项的背景色 */
+}
+</string>
+  </property>
+  <widget class="QFrame" name="frame">
    <property name="geometry">
     <rect>
-     <x>271</x>
-     <y>149</y>
-     <width>140</width>
-     <height>30</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>11</pointsize>
-    </font>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_title">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>20</y>
+     <x>50</x>
+     <y>40</y>
      <width>500</width>
-     <height>40</height>
+     <height>350</height>
     </rect>
    </property>
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
+   <property name="styleSheet">
+    <string notr="true"/>
    </property>
-   <property name="font">
-    <font>
-     <pointsize>17</pointsize>
-    </font>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
    </property>
-   <property name="text">
-    <string>欢迎使用波普特酒店温控系统！</string>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
    </property>
+   <widget class="QPushButton" name="pushButton_return">
+    <property name="geometry">
+     <rect>
+      <x>305</x>
+      <y>254</y>
+      <width>137</width>
+      <height>57</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>15</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>back</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox_room">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>193</y>
+      <width>250</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="toolTipDuration">
+     <number>-4</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background:white;
+color:black;
+border-radius:0px;
+
+
+QAbstractItemView {
+border-radius:0px;
+    outline: 0px solid gray;   /* 选定项的虚框 */
+    color: white;
+    background-color: #333;   /* 整个下拉窗体的背景色 */
+     /* 整个下拉窗体被选中项的背景色 */
+}</string>
+    </property>
+    <property name="currentIndex">
+     <number>-1</number>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_ok">
+    <property name="geometry">
+     <rect>
+      <x>55</x>
+      <y>254</y>
+      <width>140</width>
+      <height>60</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>15</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>OK</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_floor">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>147</y>
+      <width>61</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>15</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Floor:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_title">
+    <property name="geometry">
+     <rect>
+      <x>147</x>
+      <y>32</y>
+      <width>328</width>
+      <height>40</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Welcome to Bupt Hotel!</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_hello">
+    <property name="geometry">
+     <rect>
+      <x>23</x>
+      <y>84</y>
+      <width>444</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>15</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Please select your floor and room number</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox_floor">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>142</y>
+      <width>250</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">
+background:white;
+color:black;
+border-radius:0px;
+
+
+QAbstractItemView {
+border-radius:0px;
+    outline: 0px solid gray;   /* 选定项的虚框 */
+    color: white;
+    background-color: #333;   /* 整个下拉窗体的背景色 */
+     /* 整个下拉窗体被选中项的背景色 */
+}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_room">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>197</y>
+      <width>149</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>15</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Room Number:</string>
+    </property>
+   </widget>
   </widget>
-  <widget class="QLabel" name="label_floor">
+  <widget class="QToolButton" name="toolButton">
    <property name="geometry">
     <rect>
-     <x>189</x>
-     <y>154</y>
-     <width>61</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>楼层：</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_room">
-   <property name="geometry">
-    <rect>
-     <x>188</x>
-     <y>205</y>
-     <width>61</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>房间号</string>
-   </property>
-  </widget>
-  <widget class="QComboBox" name="comboBox_room">
-   <property name="geometry">
-    <rect>
-     <x>270</x>
-     <y>200</y>
-     <width>140</width>
-     <height>30</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>11</pointsize>
-    </font>
-   </property>
-   <property name="toolTipDuration">
-    <number>-4</number>
-   </property>
-   <property name="currentIndex">
-    <number>-1</number>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_hello">
-   <property name="geometry">
-    <rect>
-     <x>36</x>
-     <y>71</y>
-     <width>234</width>
-     <height>30</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>11</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>您好！请选择您的楼层和房间号</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_return">
-   <property name="geometry">
-    <rect>
-     <x>483</x>
-     <y>336</y>
-     <width>74</width>
-     <height>33</height>
+     <x>5</x>
+     <y>4</y>
+     <width>120</width>
+     <height>120</height>
     </rect>
    </property>
    <property name="text">
-    <string>返回主菜单</string>
+    <string/>
    </property>
-  </widget>
-  <widget class="QPushButton" name="pushButton_ok">
-   <property name="geometry">
-    <rect>
-     <x>357</x>
-     <y>336</y>
-     <width>74</width>
-     <height>33</height>
-    </rect>
+   <property name="icon">
+    <iconset resource="../img.qrc">
+     <normaloff>:/icon/images/xiaoren.png</normaloff>:/icon/images/xiaoren.png</iconset>
    </property>
-   <property name="text">
-    <string>确定</string>
+   <property name="iconSize">
+    <size>
+     <width>50</width>
+     <height>50</height>
+    </size>
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../img.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>comboBox_floor</sender>

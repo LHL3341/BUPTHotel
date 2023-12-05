@@ -6,7 +6,7 @@ os.chdir(os.path.abspath('./Client/'))
 print(os.path.abspath('.'))
 from entity import *
 
-from PyQt5.QtWidgets import QApplication, QListWidgetItem,QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QTableWidgetItem
 from MainWindow import MainUi
 from LoginWindow import LoginUi
 from UserSelectWindow import UserSelectUi
@@ -15,9 +15,10 @@ from Manager_Air_Window import ManagerAirUi
 from Manager_Bill_Window import ManagerBillUi
 from PyQt5 import QtCore,QtNetwork
 from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QFont
 import requests
 import json
-
+import re
 
 SERVERADDR = 'http://127.0.0.1:10086'
 FREQ = 600
@@ -29,7 +30,7 @@ class Controller:
         self.timer = QTimer()
         self.timer.timeout.connect(self.timer_event)
         self.room_options = {
-            1: ['101', '102', '103', '104', '105', '106', '107', '108', '109', '110'],
+            1: ['101(109c)', '102(109c2)', '103(113f)', '104(112b)', '105(112g)', '106', '107', '108', '109', '110'],
             2: ['201', '202', '203', '204', '205', '206', '207', '208', '209', '210'],
             3: ['301', '302', '303', '304', '305', '306', '307', '308', '309', '310'],
             4: ['401', '402', '403', '404', '405', '406', '407', '408', '409', '410']
@@ -60,6 +61,13 @@ class Controller:
         self.manager_bill.pushButton_checkout.clicked.connect(self.check_out)
         self.manager_bill.comboBox_floor.currentIndexChanged.connect(self.change_list)
 
+        self.main.setWindowTitle(username)
+        self.login.setWindowTitle(username)
+        self.usercontrol.setWindowTitle(username)
+        self.userselect.setWindowTitle(username)
+        self.manager_air.setWindowTitle(username)
+        self.manager_bill.setWindowTitle(username)
+
 
     # 跳转到 hello 窗口
     def show_main(self):
@@ -75,24 +83,24 @@ class Controller:
         # 初始化选择页面
         self.userselect = UserSelectUi()
         self.userselect.pushButton_return.clicked.connect(self.show_main)
-        self.userselect.comboBox_floor.addItems(["点击选择楼层", "1楼", "2楼", "3楼", "4楼"])
+        self.userselect.comboBox_floor.addItems(["Click to select the floor", "1st", "2nd", "3rd", "4th"])
         self.userselect.comboBox_floor.currentIndexChanged.connect(self.select)
         self.userselect.show()
 
     def show_usercontrol(self):
         self.timer.start(FREQ)
+        self.usercontrol.label_name.setText(f"Welcome,{self.username}!")
         floor = self.userselect.comboBox_floor.currentText()
         room = self.userselect.comboBox_room.currentText()
         if floor[0] =='点'or room[0] == '点':
             return
+        self.floor = int(floor[0])
+        self.room = room[:3]
+        self.usercontrol.roomid = self.room
+        self.pos = 'guest'
         response = requests.post(SERVERADDR+f'/check_in?room_id={room[:3]}',json={"guest_name":self.username})
-        if json.loads(response.text)['status'] == "success!":
-            self.floor = int(floor[0])
-            self.room = room[:3]
-            self.usercontrol.roomid = self.room
-            self.pos = 'guest'
-            self.userselect.close()
-            self.usercontrol.show()
+        self.userselect.close()
+        self.usercontrol.show()
 
     # 跳转到 login 窗口
     def show_login(self):
@@ -107,7 +115,7 @@ class Controller:
         self.timer.start(FREQ)
         self.login.close()
         self.manager_air.stackedWidget.setCurrentIndex(0)
-        self.manager_air.pushButton_5.clicked.connect(self.central_control)
+        self.manager_air.pushButton_onoff.clicked.connect(self.central_control)
         self.pos = 'air_admin'
         self.manager_air.show()
 
@@ -116,27 +124,34 @@ class Controller:
         self.login.close()
         self.manager_bill.stackedWidget.setCurrentIndex(0)
         self.manager_bill.listWidget_room.clear()
+        rows = self.manager_bill.tableWidget_status.rowCount()
+        for row in range(rows):
+            item = self.manager_bill.tableWidget_status.item(row, 0)  # 获取第一列的单元格
+            if item is not None:
+                item.setText("")  # 清空文本
         self.manager_bill.comboBox_floor.setCurrentIndex(0)
         self.pos = 'reception'
         self.manager_bill.show()
 
     def log_in(self):
-        if self.login.lineEdit_name.text() == "1" and self.login.lineEdit_password.text() == "123":
+        if self.login.lineEdit_username.text() == "1" and self.login.lineEdit_password.text() == "123":
             self.show_manager_air()
 
-        elif self.login.lineEdit_name.text() == "2" and self.login.lineEdit_password.text() == "123":
+        elif self.login.lineEdit_username.text() == "2" and self.login.lineEdit_password.text() == "123":
             self.show_manager_bill()
 
         else:
-            self.login.label_error.setText("用户名或密码错误....请重试")
-            self.login.lineEdit_name.clear()
+            self.login.label_error.setStyleSheet("color: red")
+
+            self.login.label_error.setText("Incorrect username or password...Please try again")
+            self.login.lineEdit_username.clear()
             self.login.lineEdit_password.clear()
 
     def select(self, index):
         self.userselect.comboBox_room.clear()
         # 获取对应的房间号选项
 
-        self.userselect.comboBox_room.addItem('点击选择房间号')
+        self.userselect.comboBox_room.addItem('Click to select room number')
         room_options = self.room_options.get(index, [])
         self.userselect.comboBox_room.addItems(room_options)
         self.userselect.comboBox_room.setCurrentIndex(0)
@@ -197,6 +212,8 @@ class Controller:
 
         panel.isopen = past_state.working
         panel.current_speed = past_state.speed
+        panel.current_mode = past_state.mode
+        panel.cost = past_state.total_cost
         panel.target_temp = past_state.target_temperature
         panel.current_temp = past_state.env_temperature
         self.usercontrol.update_screen.emit()
@@ -206,7 +223,7 @@ class Controller:
         window = self.manager_air
         
         limit = [int(window.lineEdit_min.text()),int(window.lineEdit_max.text())]
-        fee_rate = float(window.lineEdit_low.text())
+        fee_rate = float(window.lineEdit_fee.text())
         arg = {
             "mode":"warm",
             "fee_rate":fee_rate,
@@ -225,6 +242,7 @@ class Controller:
         response = requests.get(SERVERADDR +f'/get_device_status?device_id={panel.roomid}')
         response = json.loads(response.text)
         past_state = DeviceStatus(**response)
+        panel.cost = past_state.total_cost
         panel.isopen = past_state.working
         panel.current_speed = past_state.speed
         panel.target_temp = past_state.target_temperature
@@ -233,6 +251,7 @@ class Controller:
 
     def get_log(self):
         # 前台打印详单，调用/log/{room_id}接口
+        #response = requests.get(SERVERADDR +f'/bill_detail?guest_name={self.username}')
         #roomid = 
         #response = requests.get(SERVERADDR+'/log/{room_id}')
         #print(response.text)
@@ -256,9 +275,11 @@ class Controller:
         #response = requests.get(SERVERADDR+'/state/rooms/101')
         #res = json.loads(response.text)获取该房间状态
         #然后将其显示到前端
-        room_id = item.text()
+        if item == None:
+            return
+        room_id = item.text()[:3]
         res = requests.get(SERVERADDR +f'/get_device_status?device_id={room_id}')
-        res = json.loads(response.text)
+        res = json.loads(res.text)
         state = DeviceStatus(**res)
         """
         print(str(res.get('check_in_time', '')))
@@ -276,15 +297,15 @@ class Controller:
         #print(str(res.get('check_in_time', '')))
 
         if res['working'] == 0:
-            is_on = QTableWidgetItem('关机')
+            is_on = QTableWidgetItem('OFF')
         else:
-            is_on = QTableWidgetItem('开机')
+            is_on = QTableWidgetItem('ON')
         self.manager_bill.tableWidget_status.setItem(0, 0, is_on)
         self.manager_bill.tableWidget_status.setItem(1, 0, QTableWidgetItem(str(state.mode)))
         self.manager_bill.tableWidget_status.setItem(2, 0, QTableWidgetItem(str(state.env_temperature)))
         self.manager_bill.tableWidget_status.setItem(3, 0, QTableWidgetItem(str(state.target_temperature)))
         self.manager_bill.tableWidget_status.setItem(4, 0, QTableWidgetItem(str(state.speed)))
-        self.manager_bill.tableWidget_status.setItem(5, 0, QTableWidgetItem(str(state.total_cost)))
+        self.manager_bill.tableWidget_status.setItem(5, 0, QTableWidgetItem(str(round(state.total_cost,2))))
 
     def monitor(self):
         # 空调管理员监控各空调状态，前端界面需要一目了然
@@ -294,7 +315,7 @@ class Controller:
         res=response.text
         res=json.loads(res)
         self.manager_air.addItem(res)
-        pass
+        self.manager_air.showscheduler()
 
     def timer_event(self):
         if self.pos == 'guest':
@@ -302,7 +323,7 @@ class Controller:
         elif self.pos == 'air_admin':
             self.monitor()
         elif self.pos == 'reception':
-            pass
+            self.get_room_status(self.manager_bill.listWidget_room.currentItem())
 
 if __name__ == '__main__':
     try:
@@ -315,16 +336,18 @@ if __name__ == '__main__':
         print(response.text)
         QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         app = QApplication(sys.argv)
-        controller = Controller('109c')
+        controller = Controller('101(109c)')
         controller.show_main()
-        #controller1 = Controller('113f')
-        #controller1.show_main()
-        #controller2 = Controller()
-        #controller2.show_main()
-        #controller3 = Controller()
-        #controller3.show_main()
-        #controller4 = Controller()
-        #controller4.show_main()
+        controller1 = Controller('102(109c2)')
+        controller1.show_main()
+        controller2 = Controller('103(113f)')
+        controller2.show_main()
+        controller3 = Controller('104(112b)')
+        controller3.show_main()
+        controller4 = Controller('105(112g)')
+        controller4.show_main()
+        controller5 = Controller('空调管理员')
+        controller5.show_main()
         sys.exit(app.exec_())
 
     except Exception as e:

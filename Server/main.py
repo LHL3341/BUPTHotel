@@ -8,11 +8,12 @@ from copy import deepcopy
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
-DEFAULT_TARGET_TEMP = 25
+DEFAULT_TARGET_TEMP = 22
 TIMESLICE = 10
 FREQ = 1
 DEFAULT_CHECKOUT = datetime(2035,1,1)
-SPEED = {'low':1,'mid':2,'high':3}
+SPEED = {'low':0,'mid':1,'high':2}
+WINDSPEED = {'low':1/3,'mid':0.5,'high':1}
 
 class Room:
     #房间
@@ -87,7 +88,6 @@ class Scheduler:
             if j > max:
                 max = j
                 maxid = i
-        print(maxid)
         return maxid
         
     def addItem(self,roomid,speed,env_tmp):
@@ -153,7 +153,8 @@ class Scheduler:
             for i in v:
                 self.RemoveItem(i.roomid)
         for k, v in self.serving_list.items():
-            self.RemoveItem(v.roomid)
+            if v!=None:
+                self.RemoveItem(v.roomid)
         self.wait_list = {0:[],1:[],2:[]}
         self.serving_list = {0:None,1:None,2:None}
 
@@ -219,7 +220,6 @@ class Hotel:
         for k,v in scheduler.serving_list.items():
             if v!=None and v.served_time%TIMESLICE==0 and v.served_time!=0:
                 if scheduler.wait_list[v.speed]!=[]:
-                    print(scheduler.wait_list)
                     scheduler.wait_list[v.speed].append(v)
                     scheduler.serving_list[k] = None
                     scheduler.Insert([v.speed])
@@ -236,11 +236,43 @@ class Hotel:
                 # TODO:产生一条详单记录 Logentry
                 v.device.last_update = datetime.now()
 
-
+def simulate():
+    
+    #del hotel.rooms['101']
+    #del hotel.rooms['102']
+    #del hotel.rooms['103']
+    #del hotel.rooms['104']
+    #del hotel.rooms['105']
+    #hotel.rooms.update({'101(109c)':Room('101(109c)')})
+    #hotel.rooms.update({'102(109c2)':Room('102(109c2)')})
+    #hotel.rooms.update({'103(113f)':Room('103(113f)')})
+    #hotel.rooms.update({'104(112b)':Room('104(112b)')})
+    #hotel.rooms.update({'105(112g)':Room('105(112g)')})
+    #hotel.rooms['101(109c)'].default_tmp = 10
+    #hotel.rooms['102(109c2)'].default_tmp = 15
+    #hotel.rooms['103(113f)'].default_tmp = 18
+    #hotel.rooms['104(112b)'].default_tmp = 12
+    #hotel.rooms['105(112g)'].default_tmp = 14
+    #hotel.rooms['101(109c)'].device.env_temperature = 10
+    #hotel.rooms['102(109c2)'].device.env_temperature = 15
+    #hotel.rooms['103(113f)'].device.env_temperature = 18
+    #hotel.rooms['104(112b)'].device.env_temperature = 12
+    #hotel.rooms['105(112g)'].device.env_temperature = 14
+    hotel.rooms['101'].default_tmp = 10
+    hotel.rooms['102'].default_tmp = 15
+    hotel.rooms['103'].default_tmp = 18
+    hotel.rooms['104'].default_tmp = 12
+    hotel.rooms['105'].default_tmp = 14
+    hotel.rooms['101'].device.env_temperature = 10
+    hotel.rooms['102'].device.env_temperature = 15
+    hotel.rooms['103'].device.env_temperature = 18
+    hotel.rooms['104'].device.env_temperature = 12
+    hotel.rooms['105'].device.env_temperature = 14
 
 if Connection():
     app = FastAPI()
     hotel = Hotel()
+    simulate()
     timer = AsyncIOScheduler()
     timer.start()
     
@@ -252,8 +284,8 @@ async def timer_event():
     for k, v in servelist.items():
         if v != None:
             device = hotel.rooms[v.roomid].device
-            device.total_cost += cost*SPEED[device.speed]*(FREQ/60)
-            v.cost += cost*SPEED[device.speed]*(FREQ/60)
+            device.total_cost += cost*WINDSPEED[device.speed]*(FREQ/60)
+            v.cost += cost*WINDSPEED[device.speed]*(FREQ/60)
             v.served_time += FREQ
         
     # 调度
@@ -263,8 +295,8 @@ async def timer_event():
 async def update_temp():
 
     servelist = hotel.central.scheduler.serving_list
+    waitlist = hotel.central.scheduler.wait_list
     served = [servelist[i].roomid for i in range(3) if servelist[i]!=None]
-    print(served)
     for k, v in hotel.rooms.items():
         if k not in served:
             if abs(v.device.env_temperature - v.default_tmp) <=0.5:
@@ -277,14 +309,19 @@ async def update_temp():
     for k, v in servelist.items():
         if v!=None:
             device = hotel.rooms[v.roomid].device
-            if abs(device.target_temperature - device.env_temperature)<=0.5:
+            slide = WINDSPEED[device.speed]
+            if abs(device.target_temperature - device.env_temperature)<=slide:
                 device.env_temperature = device.target_temperature
                 # 释放资源
-
+                device.working = False
+                hotel.central.scheduler.RemoveItem(v.roomid)
+                
             elif device.env_temperature < device.target_temperature:
-                device.env_temperature += 0.5
+                device.env_temperature += slide
             else:
-                device.env_temperature -= 0.5
+                device.env_temperature -= slide
+    print("服务队列：",servelist)
+    print("等待队列：",waitlist)
 
 
 
@@ -376,6 +413,8 @@ async def get_device_status(device_id):
 
 @app.post('/check_in')
 async def check_in(room_id, body=Body(None)):
+    if room_id == '':
+        return {"detail":"房间为空"}
     guest_name = body["guest_name"]
 
     if not hotel.rooms[room_id].isused:
@@ -384,7 +423,7 @@ async def check_in(room_id, body=Body(None)):
         room.checkin = datetime.now()
         room.username = str(guest_name)
         print(room.username+'入住')
-        room.device = DeviceStatus(False,'warm',24,DEFAULT_TARGET_TEMP,'mid',0)
+        #room.device = DeviceStatus(False,'warm',24,DEFAULT_TARGET_TEMP,'mid',0)
     
     return {"status":"success!"}
 
@@ -417,7 +456,6 @@ async def get_bill(guest_name):
             ttcost = 0
             for entry in res:
                 ttcost += entry[6]
-                print(entry[6])
             print(guest_name+'共花费'+str(ttcost))
             res = {
                 'total_cost':ttcost,
@@ -461,8 +499,9 @@ async def get_weekly_report(body=Body(None)):
     body = json.loads(body)
     date = body['date']
     pass
-            
+
 
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app,host='127.0.0.1',port=10086)
+    

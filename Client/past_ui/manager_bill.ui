@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>600</width>
+    <height>400</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1400</width>
+    <height>1000</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>波普特酒店温控系统</string>
+  </property>
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>4</x>
+     <y>5</y>
+     <width>592</width>
+     <height>392</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QFrame" name="frame_left">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>1</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <widget class="QPushButton" name="pushButton_report">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>33</y>
+         <width>65</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>报表</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_checkinout">
+       <property name="geometry">
+        <rect>
+         <x>14</x>
+         <y>79</y>
+         <width>72</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>入住退房</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_return">
+       <property name="geometry">
+        <rect>
+         <x>13</x>
+         <y>345</y>
+         <width>70</width>
+         <height>31</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>9</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>返回主菜单</string>
+       </property>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frame_2">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>5</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <widget class="QStackedWidget" name="stackedWidget">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>459</width>
+         <height>362</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
+       <widget class="QWidget" name="page_report">
+        <widget class="QTableWidget" name="tableWidget_report">
+         <property name="geometry">
+          <rect>
+           <x>81</x>
+           <y>32</y>
+           <width>308</width>
+           <height>243</height>
+          </rect>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QWidget" name="page_checkinout">
+        <widget class="QWidget" name="layoutWidget">
+         <property name="geometry">
+          <rect>
+           <x>1</x>
+           <y>-5</y>
+           <width>469</width>
+           <height>377</height>
+          </rect>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout">
+          <item>
+           <widget class="QFrame" name="frame_up">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>1</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <widget class="QComboBox" name="comboBox_floor">
+             <property name="geometry">
+              <rect>
+               <x>50</x>
+               <y>23</y>
+               <width>106</width>
+               <height>22</height>
+              </rect>
+             </property>
+             <item>
+              <property name="text">
+               <string>请选择楼层</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>一楼</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>二楼</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>三楼</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>四楼</string>
+              </property>
+             </item>
+            </widget>
+            <widget class="QLabel" name="label_floor">
+             <property name="geometry">
+              <rect>
+               <x>1</x>
+               <y>23</y>
+               <width>50</width>
+               <height>22</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>楼层：</string>
+             </property>
+            </widget>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_down">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>5</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+            <widget class="QPushButton" name="pushButton_printbill">
+             <property name="geometry">
+              <rect>
+               <x>171</x>
+               <y>270</y>
+               <width>80</width>
+               <height>30</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>打印账单</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="pushButton_checkin">
+             <property name="geometry">
+              <rect>
+               <x>171</x>
+               <y>230</y>
+               <width>80</width>
+               <height>30</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>入住</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="pushButton_printdetail">
+             <property name="geometry">
+              <rect>
+               <x>291</x>
+               <y>270</y>
+               <width>80</width>
+               <height>30</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>打印详单</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="pushButton_checkout">
+             <property name="geometry">
+              <rect>
+               <x>291</x>
+               <y>230</y>
+               <width>80</width>
+               <height>30</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>退房</string>
+             </property>
+            </widget>
+            <widget class="QListWidget" name="listWidget_room">
+             <property name="geometry">
+              <rect>
+               <x>31</x>
+               <y>29</y>
+               <width>60</width>
+               <height>250</height>
+              </rect>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+            </widget>
+            <widget class="QTableWidget" name="tableWidget_status">
+             <property name="geometry">
+              <rect>
+               <x>126</x>
+               <y>23</y>
+               <width>313</width>
+               <height>195</height>
+              </rect>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>13</pointsize>
+              </font>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Sunken</enum>
+             </property>
+             <property name="editTriggers">
+              <set>QAbstractItemView::NoEditTriggers</set>
+             </property>
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+             <property name="horizontalScrollMode">
+              <enum>QAbstractItemView::ScrollPerPixel</enum>
+             </property>
+             <attribute name="horizontalHeaderVisible">
+              <bool>false</bool>
+             </attribute>
+             <attribute name="horizontalHeaderCascadingSectionResizes">
+              <bool>false</bool>
+             </attribute>
+             <attribute name="horizontalHeaderDefaultSectionSize">
+              <number>200</number>
+             </attribute>
+             <attribute name="verticalHeaderCascadingSectionResizes">
+              <bool>false</bool>
+             </attribute>
+             <attribute name="verticalHeaderDefaultSectionSize">
+              <number>32</number>
+             </attribute>
+             <row>
+              <property name="text">
+               <string>空调电源</string>
+              </property>
+             </row>
+             <row>
+              <property name="text">
+               <string>模式</string>
+              </property>
+             </row>
+             <row>
+              <property name="text">
+               <string>当前温度</string>
+              </property>
+             </row>
+             <row>
+              <property name="text">
+               <string>目标温度</string>
+              </property>
+             </row>
+             <row>
+              <property name="text">
+               <string>风速</string>
+              </property>
+             </row>
+             <row>
+              <property name="text">
+               <string>总费用</string>
+              </property>
+             </row>
+             <column>
+              <property name="text">
+               <string>New Column</string>
+              </property>
+             </column>
+             <item row="0" column="0">
+              <property name="text">
+               <string/>
+              </property>
+             </item>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

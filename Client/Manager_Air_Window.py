@@ -1,8 +1,6 @@
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget,  QLabel, QTableWidget, QTableWidgetItem
 from PyQt5 import uic
-from PyQt5.QtWidgets import QVBoxLayout
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidget, QTableWidgetItem
-
+from PyQt5.QtGui import QPixmap
 Ui_Manager_Air, ManagerAirBase = uic.loadUiType("./ui/manager_air.ui")
 
 
@@ -19,24 +17,30 @@ class ManagerAirUi(QWidget, Ui_Manager_Air):
         self.tableWidget.setHorizontalHeaderLabels(['Room', 'Power', 'Mode',
                                                     'Env-temp','Target-temp','Speed','Totalcost'])
         self.tableWidget.setEditTriggers(self.tableWidget.NoEditTriggers)
-        
-        self.mainswitch = False
-        
-        
+        self.use_background()
     def display1(self):
         self.stackedWidget.setCurrentIndex(0)
 
     def display2(self):
         self.stackedWidget.setCurrentIndex(1)
 
+    def use_background(self):
+        # 创建 QLabel 以显示背景图像
+        background_label = QLabel(self)
+        pixmap = QPixmap("images/background.jpg")
+        background_label.setPixmap(pixmap)
+        background_label.setGeometry(0, 0, pixmap.width(), pixmap.height())
+        background_label.lower()  # 将其置于底层
+
+
     def addItem(self,res):
         for i in range(40):
             room_status=res[i]
             self.tableWidget.setItem(i,0, QTableWidgetItem(res[i]["room_id"]))
             if res[i]["working"]:
-                s="开"
+                s="ON"
             else:
-                s="关"
+                s="OFF"
 
             self.tableWidget.setItem(i,1, QTableWidgetItem(s))
             self.tableWidget.setItem(i,2, QTableWidgetItem(str(res[i]["mode"])))
