@@ -9,7 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
 DEFAULT_TARGET_TEMP = 22
-TIMESLICE = 30
+TIMESLICE = 10   # 10秒当作1分钟，可调，如TIMESLICE=30,则30秒作一分钟
 FREQ = 1
 DEFAULT_CHECKOUT = datetime(2035,1,1)
 SPEED = {'low':0,'mid':1,'high':2}
@@ -283,8 +283,8 @@ async def timer_event():
     for k, v in servelist.items():
         if v != None:
             device = hotel.rooms[v.roomid].device
-            device.total_cost += cost*WINDSPEED[device.speed]*(FREQ/60)
-            v.cost += cost*WINDSPEED[device.speed]*(FREQ/60)
+            device.total_cost += cost*WINDSPEED[device.speed]*(FREQ/TIMESLICE)
+            v.cost += cost*WINDSPEED[device.speed]*(FREQ/TIMESLICE)
             v.served_time += FREQ
         
     # 调度
