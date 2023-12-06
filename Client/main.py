@@ -17,6 +17,7 @@ from PyQt5 import QtCore,QtNetwork
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QFont
 import requests
+import openpyxl
 import json
 import re
 
@@ -60,13 +61,9 @@ class Controller:
         self.manager_bill.listWidget_room.itemClicked.connect(self.get_room_status)
         self.manager_bill.pushButton_checkout.clicked.connect(self.check_out)
         self.manager_bill.comboBox_floor.currentIndexChanged.connect(self.change_list)
+        self.manager_bill.pushButton_printdetail.clicked.connect(self.get_log)
+        self.manager_bill.pushButton_printbill.clicked.connect(self.get_bill)
 
-        self.main.setWindowTitle(username)
-        self.login.setWindowTitle(username)
-        self.usercontrol.setWindowTitle(username)
-        self.userselect.setWindowTitle(username)
-        self.manager_air.setWindowTitle(username)
-        self.manager_bill.setWindowTitle(username)
 
 
     # 跳转到 hello 窗口
@@ -77,6 +74,8 @@ class Controller:
         self.manager_air.close()
         self.manager_bill.close()
         self.main.show()
+        self.main.setWindowTitle(self.username)
+
 
     def show_userselect(self):
         self.main.close()
@@ -85,7 +84,9 @@ class Controller:
         self.userselect.pushButton_return.clicked.connect(self.show_main)
         self.userselect.comboBox_floor.addItems(["Click to select the floor", "1st", "2nd", "3rd", "4th"])
         self.userselect.comboBox_floor.currentIndexChanged.connect(self.select)
+        self.userselect.setWindowTitle(self.username)
         self.userselect.show()
+
 
     def show_usercontrol(self):
         self.timer.start(FREQ)
@@ -100,6 +101,7 @@ class Controller:
         self.pos = 'guest'
         response = requests.post(SERVERADDR+f'/check_in?room_id={room[:3]}',json={"guest_name":self.username})
         self.userselect.close()
+        self.usercontrol.setWindowTitle(self.username)
         self.usercontrol.show()
 
     # 跳转到 login 窗口
@@ -109,7 +111,9 @@ class Controller:
         self.login = LoginUi()
         self.login.pushButton_login.clicked.connect(self.log_in)
         self.login.pushButton_return.clicked.connect(self.show_main)
+        self.login.setWindowTitle(self.username)
         self.login.show()
+
 
     def show_manager_air(self):
         self.timer.start(FREQ)
@@ -117,6 +121,7 @@ class Controller:
         self.manager_air.stackedWidget.setCurrentIndex(0)
         self.manager_air.pushButton_onoff.clicked.connect(self.central_control)
         self.pos = 'air_admin'
+        self.manager_air.setWindowTitle(self.username)
         self.manager_air.show()
 
     def show_manager_bill(self):
@@ -131,6 +136,7 @@ class Controller:
                 item.setText("")  # 清空文本
         self.manager_bill.comboBox_floor.setCurrentIndex(0)
         self.pos = 'reception'
+        self.manager_bill.setWindowTitle(self.username)
         self.manager_bill.show()
 
     def log_in(self):
@@ -256,11 +262,54 @@ class Controller:
         #response = requests.get(SERVERADDR+'/log/{room_id}')
         #print(response.text)
         #res = json.loads(response.text)
-        pass
+        response = requests.get(SERVERADDR+f'/bill_detail?guest_name={self.manager_bill.listWidget_room.currentItem().text()}')
+        #print(response.text)
+        res = json.loads(response.text)
+        if type(res)!=list:
+            return
+        
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # 构建 log.xlsx 文件的相对路径
+        log_file_path_detail = os.path.join(current_dir, f'bill_detail/{self.manager_bill.listWidget_room.currentItem().text()}.xlsx')
+        #print("log_file_path:\n",log_file_path)
+
+        # 加载工作簿
+        workbook_detail = openpyxl.Workbook()
+        # 获取默认的工作表
+        sheet = workbook_detail.active
+        sheet.apeend('room_id','request_time','start_time','end_time','served_time','speed','cost','fee_rate','from_tem','to_tem')
+        # 遍历二维列表，并将数据写入到工作表的单元格中
+        for row in res:
+            sheet.append(row)
+
+        # 保存工作簿
+        workbook_detail.save(log_file_path_detail)
 
     def get_bill(self):
         # 前台打印账单，调用@app.get('/cost/{room_id}')接口（接口需要自己实现）
-        pass
+        response = requests.get(SERVERADDR+f'/bill_cost?guest_name={self.manager_bill.listWidget_room.currentItem().text()}')
+        print(response.text)
+        res = json.loads(response.text)
+        if len(res)!=4:
+            return
+        res_list = [key for key in res.keys()] + [value for value in res.values()]
+    
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # 构建 log.xlsx 文件的相对路径
+        log_file_path_bill = os.path.join(current_dir, f'bill/{self.manager_bill.listWidget_room.currentItem().text()}.xlsx')
+        #print("log_file_path:\n",log_file_path)
+
+        # 加载工作簿
+        workbook_bill = openpyxl.Workbook()
+        # 获取默认的工作表
+        sheet_bill = workbook_bill.active
+        
+        # 遍历二维列表，并将数据写入到工作表的单元格中
+        sheet_bill.append(['total_cost','check_in_time','check_out_time','room_id'])
+        sheet_bill.append(res_list[-4:])
+
+        # 保存工作簿
+        workbook_bill.save(log_file_path_bill)
 
     def check_out(self):
         # 前台退房，调用服务器@app.post('/{room_id}/check_out')接口
@@ -329,7 +378,6 @@ if __name__ == '__main__':
     try:
         response = requests.get(SERVERADDR)
         print(response.text)
-        
         response = requests.get(SERVERADDR+'/get_all_device_status')
         print(response.text)
         response = requests.get(SERVERADDR+'/get_device_status?device_id=101')

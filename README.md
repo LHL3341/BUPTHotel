@@ -36,7 +36,7 @@ pip install -r requirement.txt
 1. 启动SQL数据库服务器
 2. 运行
     ```bash
-    uvicorn main:app --host 127.0.0.1 --port 10086 --reload
+    uvicorn main:app --host 127.0.0.1 --port 10086 --reload --log-level warning
     ```
 ## 启动客户端
 运行

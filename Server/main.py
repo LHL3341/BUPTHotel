@@ -9,7 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
 DEFAULT_TARGET_TEMP = 22
-TIMESLICE = 10
+TIMESLICE = 30
 FREQ = 1
 DEFAULT_CHECKOUT = datetime(2035,1,1)
 SPEED = {'low':0,'mid':1,'high':2}
@@ -158,8 +158,6 @@ class Scheduler:
         self.wait_list = {0:[],1:[],2:[]}
         self.serving_list = {0:None,1:None,2:None}
 
-
-
 class CentralAir:
     #空调配置
     def __init__(self):
@@ -173,6 +171,7 @@ class Hotel:
     #酒店
     def __init__(self):
         self.central = CentralAir()   
+        self.slice_num =0 
         self.rooms = {}
         for layer in [1,2,3,4]:
             for i in range(1,11):
@@ -225,7 +224,7 @@ class Hotel:
                     scheduler.Insert([v.speed])
         
     def schedule(self):
-        room_ls = [self.scheduler.serving_list[i]['roomid']  for i in range(3) if self.scheduler.serving_list[i]!=None]
+        room_ls = [self.scheduler.serving_list[i].roomid  for i in range(3) if self.scheduler.serving_list[i]!=None]
         for k, v in hotel.rooms.items():
             if v.device.room in room_ls and not v.device.is_on:
                 v.device.is_on = True
@@ -291,7 +290,7 @@ async def timer_event():
     # 调度
     hotel.Robin()
 
-@timer.scheduled_job('interval',seconds=10)
+@timer.scheduled_job('interval',seconds=TIMESLICE)
 async def update_temp():
 
     servelist = hotel.central.scheduler.serving_list
@@ -313,6 +312,7 @@ async def update_temp():
             if abs(device.target_temperature - device.env_temperature)<=slide:
                 device.env_temperature = device.target_temperature
                 # 释放资源
+                print('释放',v.roomid)
                 device.working = False
                 hotel.central.scheduler.RemoveItem(v.roomid)
                 
@@ -320,8 +320,10 @@ async def update_temp():
                 device.env_temperature += slide
             else:
                 device.env_temperature -= slide
-    print("服务队列：",servelist)
-    print("等待队列：",waitlist)
+    print("时间片",hotel.slice_num)
+    hotel.slice_num +=1
+    print("服务队列：",[servelist[i].roomid  for i in range(3) if servelist[i]!=None])
+    print("等待队列：",[[room.roomid for room in waitlist[i]]  for i in range(3) if waitlist[i]!=None])
 
 
 
