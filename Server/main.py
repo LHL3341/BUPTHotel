@@ -9,18 +9,18 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
 DEFAULT_TARGET_TEMP = 22
-TIMESLICE = 10   # 10秒当作1分钟，可调，如TIMESLICE=30,则30秒作一分钟
+TIMESLICE = 30   # 10秒当作1分钟，可调，如TIMESLICE=30,则30秒作一分钟
 FREQ = 1
 DEFAULT_CHECKOUT = datetime(2035,1,1)
 SPEED = {'low':0,'mid':1,'high':2}
-WINDSPEED = {'low':1/3,'mid':0.5,'high':1}
+WINDSPEED = {'low':0.33,'mid':0.5,'high':1}
 
 class Room:
     #房间
     def __init__(self,id):
         self.roomid = id
         self.isused = False
-        self.default_tmp = 25
+        self.default_tmp = 24
         self.checkin = datetime.now()
         self.checkout = DEFAULT_CHECKOUT
         self.username = ''
@@ -64,7 +64,9 @@ class Task:
         self.roomid = roomid
         self.speed =speed
         self.start_time = None
+        self.end_time = None
         self.start_tmp = start_tmp
+        self.end_tmp = None
         self.served_time = 0
         self.cost =0
 
@@ -97,13 +99,14 @@ class Scheduler:
         i = self.isEmpty()
         if i >=0:
             #若空，则直接开始服务
+            print((roomid,speed),'直接使用实例',i)
             self.serving_list[i] = item
             item.start_time = time
         elif self.isPreemptable(item)!=-1:
             #若优先级更高，则抢占
             j = self.isPreemptable(item)
             preempted_item = self.serving_list[j]
-            print(roomid+"抢占"+preempted_item.roomid)
+            print((roomid,speed),"从",(preempted_item.roomid,preempted_item.speed),'抢占实例',j)
             self.wait_list[preempted_item.speed].append(self.serving_list[j])
             item.start_time = time
             self.serving_list[j] = item
@@ -118,27 +121,33 @@ class Scheduler:
                 device = room.device
                 v.end_time = datetime.now()
                 v.end_tmp = device.env_temperature
-                break
-        LogEntry(v.roomid,
-                 v.request_time,
-                 v.start_time,
-                 v.end_time,
-                 v.served_time,
-                 v.speed,
-                 v.cost,
-                 hotel.central.cost,
-                 v.start_tmp,
-                 v.end_tmp
-                 ).Insert_log_entry()
-        self.Insert()
+
+                LogEntry(v.roomid,
+                        v.request_time,
+                        v.start_time,
+                        v.end_time,
+                        v.served_time,
+                        v.speed,
+                        v.cost,
+                        hotel.central.cost,
+                        v.start_tmp,
+                        v.end_tmp
+                        ).Insert_log_entry()
+        for i, j in self.wait_list.items():
+            if j != []:
+                for k in j:
+                    if roomid == k.roomid:
+                        j.remove(k)
 
     def Insert(self, priority=[2,1,0]):
         i = self.isEmpty()
+        if i == -1:
+            return
         for j in priority:
             waitlist = self.wait_list[j]
-            if waitlist!=[]:
+            if waitlist!=[] and self.serving_list[i]==None:
                 self.serving_list[i] = waitlist[0]
-                print('插入'+waitlist[0].roomid)
+                print((waitlist[0].roomid,waitlist[0].speed),f'使用空闲实例{i}')
                 if waitlist[0].start_time== None:
                     waitlist[0].start_time = datetime.now()
                 waitlist.remove(waitlist[0])
@@ -210,19 +219,52 @@ class Hotel:
             self.scheduler.Wait(roomid,devicestatus.last_update,devicestatus.wind_speed)
             self.scheduler.Insert()
         self.rooms[roomid].update_device(devicestatus)
-        LogEntry(devicestatus.room,devicestatus.temperature,devicestatus.wind_speed,0,devicestatus.is_on,datetime.now(),self.rooms[devicestatus.room].checkin).Insert_log_entry()
+        #LogEntry(devicestatus.room,devicestatus.temperature,devicestatus.wind_speed,0,devicestatus.is_on,datetime.now(),self.rooms[devicestatus.room].checkin).Insert_log_entry()
         self.schedule()
     
     def Robin(self):
 
-        scheduler = self.central.scheduler
-        for k,v in scheduler.serving_list.items():
-            if v!=None and v.served_time%TIMESLICE==0 and v.served_time!=0:
-                if scheduler.wait_list[v.speed]!=[]:
-                    scheduler.wait_list[v.speed].append(v)
-                    scheduler.serving_list[k] = None
-                    scheduler.Insert([v.speed])
-        
+        for k,v in self.central.scheduler.serving_list.items():
+            if v!=None and v.served_time%(TIMESLICE*2)==0 and v.served_time!=0:
+                if self.central.scheduler.wait_list[v.speed]!=[]:
+                    self.central.scheduler.wait_list[v.speed].append(v)
+                    self.central.scheduler.serving_list[k] = None
+        self.central.scheduler.Insert()
+    
+    def update_temp(self):
+        interval = FREQ/TIMESLICE
+        served = [self.central.scheduler.serving_list[i].roomid for i in range(3) if self.central.scheduler.serving_list[i]!=None]
+        for k, v in self.rooms.items():
+            if k not in served:
+                if abs(v.device.env_temperature - v.default_tmp) <=0.5*interval:
+                    v.device.env_temperature = v.default_tmp
+                elif v.device.env_temperature > v.default_tmp:
+                    v.device.env_temperature -=0.5*interval
+                else:
+                    v.device.env_temperature +=0.5*interval
+            
+        for k, v in self.central.scheduler.serving_list.items():
+            if v!=None:
+                device = self.rooms[v.roomid].device
+                slide = WINDSPEED[device.speed]*interval
+                if abs(device.target_temperature - device.env_temperature)<=slide:
+                    device.env_temperature = device.target_temperature
+                    # 释放资源
+                    print(v.roomid,'到达目标温度，释放资源')
+                    device.working = False
+                    self.central.scheduler.RemoveItem(v.roomid)
+                    self.central.scheduler.Insert()
+                    
+                elif device.env_temperature < device.target_temperature:
+                    device.env_temperature += slide
+                else:
+                    device.env_temperature -= slide
+        if self.slice_num % TIMESLICE == 0 and self.slice_num!=0:
+            print("时间片",self.slice_num/TIMESLICE)
+            print("服务队列：",[(self.central.scheduler.serving_list[i].roomid,self.central.scheduler.serving_list[i].speed)  for i in range(3) if self.central.scheduler.serving_list[i]!=None])
+            print("等待队列：",[[room.roomid for room in self.central.scheduler.wait_list[i]]  for i in range(3) if self.central.scheduler.wait_list[i]!=None])
+        self.slice_num +=1
+            
     def schedule(self):
         room_ls = [self.scheduler.serving_list[i].roomid  for i in range(3) if self.scheduler.serving_list[i]!=None]
         for k, v in hotel.rooms.items():
@@ -278,9 +320,8 @@ if Connection():
 @timer.scheduled_job('interval',seconds=FREQ)
 async def timer_event():
     # 计费
-    servelist = hotel.central.scheduler.serving_list
     cost = hotel.central.cost
-    for k, v in servelist.items():
+    for k, v in hotel.central.scheduler.serving_list.items():
         if v != None:
             device = hotel.rooms[v.roomid].device
             device.total_cost += cost*WINDSPEED[device.speed]*(FREQ/TIMESLICE)
@@ -289,42 +330,7 @@ async def timer_event():
         
     # 调度
     hotel.Robin()
-
-@timer.scheduled_job('interval',seconds=TIMESLICE)
-async def update_temp():
-
-    servelist = hotel.central.scheduler.serving_list
-    waitlist = hotel.central.scheduler.wait_list
-    served = [servelist[i].roomid for i in range(3) if servelist[i]!=None]
-    for k, v in hotel.rooms.items():
-        if k not in served:
-            if abs(v.device.env_temperature - v.default_tmp) <=0.5:
-                v.device.env_temperature = v.default_tmp
-            elif v.device.env_temperature > v.default_tmp:
-                v.device.env_temperature -=0.5
-            else:
-                v.device.env_temperature +=0.5
-        
-    for k, v in servelist.items():
-        if v!=None:
-            device = hotel.rooms[v.roomid].device
-            slide = WINDSPEED[device.speed]
-            if abs(device.target_temperature - device.env_temperature)<=slide:
-                device.env_temperature = device.target_temperature
-                # 释放资源
-                print('释放',v.roomid)
-                device.working = False
-                hotel.central.scheduler.RemoveItem(v.roomid)
-                
-            elif device.env_temperature < device.target_temperature:
-                device.env_temperature += slide
-            else:
-                device.env_temperature -= slide
-    print("时间片",hotel.slice_num)
-    hotel.slice_num +=1
-    print("服务队列：",[servelist[i].roomid  for i in range(3) if servelist[i]!=None])
-    print("等待队列：",[[room.roomid for room in waitlist[i]]  for i in range(3) if waitlist[i]!=None])
-
+    hotel.update_temp()
 
 
 @app.get("/")
@@ -342,24 +348,30 @@ async def logout():
 @app.post('/remote_control')
 async def remote_control(device_id, body=Body(None)):
     # turn_on, turn_off, set_temperature, set_speed
-    scheduler = hotel.central.scheduler
     command, args = body["command"], body["args"]
     room = hotel.rooms[device_id]
     if command == "turn_on":
         room.device.working = True
-        scheduler.addItem(device_id,SPEED[room.device.speed],room.device.env_temperature)
+        hotel.central.scheduler.addItem(device_id,SPEED[room.device.speed],room.device.env_temperature)
         
     elif command == "turn_off":
         room.device.working = False
-        scheduler.RemoveItem(device_id)
+        hotel.central.scheduler.RemoveItem(device_id)
+        hotel.central.scheduler.Insert()
 
     elif command == "set_temperature":
         room.device.target_temperature = args["target_temp"]
 
     elif command == "set_speed":
+        hotel.central.scheduler.RemoveItem(device_id)
+        if room.device.speed == 'high':
+            hotel.central.scheduler.Insert()
+        elif room.device.speed == 'low':
+            hotel.central.scheduler.Insert([2,1])
+        else:
+            hotel.central.scheduler.Insert([2])
         room.device.speed = args["speed"]
-        scheduler.RemoveItem(device_id)
-        scheduler.addItem(device_id,SPEED[room.device.speed],room.device.env_temperature)
+        hotel.central.scheduler.addItem(device_id,SPEED[room.device.speed],room.device.env_temperature)
         
     #hotel.updatedevice(DeviceStatus(**new_state))
     # TODO:产生一条详单记录 Logentry

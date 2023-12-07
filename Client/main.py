@@ -351,7 +351,7 @@ class Controller:
             is_on = QTableWidgetItem('ON')
         self.manager_bill.tableWidget_status.setItem(0, 0, is_on)
         self.manager_bill.tableWidget_status.setItem(1, 0, QTableWidgetItem(str(state.mode)))
-        self.manager_bill.tableWidget_status.setItem(2, 0, QTableWidgetItem(str(state.env_temperature)))
+        self.manager_bill.tableWidget_status.setItem(2, 0, QTableWidgetItem(str(round(state.env_temperature,2))))
         self.manager_bill.tableWidget_status.setItem(3, 0, QTableWidgetItem(str(state.target_temperature)))
         self.manager_bill.tableWidget_status.setItem(4, 0, QTableWidgetItem(str(state.speed)))
         self.manager_bill.tableWidget_status.setItem(5, 0, QTableWidgetItem(str(round(state.total_cost,2))))
@@ -394,8 +394,6 @@ if __name__ == '__main__':
         controller3.show_main()
         controller4 = Controller('105(112g)')
         controller4.show_main()
-        controller5 = Controller('空调管理员')
-        controller5.show_main()
         sys.exit(app.exec_())
 
     except Exception as e:

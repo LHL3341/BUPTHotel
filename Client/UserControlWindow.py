@@ -65,7 +65,7 @@ class UserControlUi(QWidget, Ui_UserControl):
             self.label_speed.setText("")
             self.pushButton_onoff.setText("ON")
         self.label_cost.setText(str(round(self.cost,2)))
-        self.label_envtmp.setText(f"{self.current_temp}")
+        self.label_envtmp.setText(f"{round(self.current_temp,2)}")
         self.lcdNumber.display(self.target_temp)
 
     def use_background(self):
