@@ -58,7 +58,7 @@ QLabel
 
 QPushButton
 {
-background:red;
+background:#B62B2B;
 color:white;
 border-radius:15px;
 }
@@ -139,6 +139,7 @@ background:#333;
         <font>
          <family>century gothic</family>
          <pointsize>12</pointsize>
+         <bold>true</bold>
         </font>
        </property>
        <property name="text">
@@ -158,29 +159,40 @@ background:#333;
         <font>
          <family>century gothic</family>
          <pointsize>12</pointsize>
+         <bold>true</bold>
         </font>
        </property>
        <property name="text">
-        <string>Room Monitor</string>
+        <string>Monitor</string>
        </property>
       </widget>
       <widget class="QPushButton" name="pushButton_return">
        <property name="geometry">
         <rect>
-         <x>18</x>
-         <y>423</y>
-         <width>84</width>
-         <height>35</height>
+         <x>16</x>
+         <y>419</y>
+         <width>91</width>
+         <height>41</height>
         </rect>
        </property>
        <property name="font">
         <font>
          <family>century gothic</family>
-         <pointsize>15</pointsize>
+         <pointsize>16</pointsize>
         </font>
        </property>
        <property name="text">
-        <string>Back</string>
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>../home.png</normaloff>../home.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>30</width>
+         <height>30</height>
+        </size>
        </property>
       </widget>
      </widget>
@@ -216,6 +228,7 @@ background:#333;
        <property name="font">
         <font>
          <family>century gothic</family>
+         <bold>true</bold>
         </font>
        </property>
        <property name="styleSheet">
@@ -225,6 +238,40 @@ background:#333;
        <property name="currentIndex">
         <number>1</number>
        </property>
+       <widget class="QWidget" name="page_branch">
+        <widget class="QTableWidget" name="tableWidget">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>0</y>
+           <width>581</width>
+           <height>431</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QTableWidget::item
+{
+color:white;
+background:#333;
+}
+
+QHeaderView::section {
+    background:#333; /* 设置表头的背景颜色 */
+    color: white;           /* 设置表头文本颜色 */
+ 
+
+}
+
+QTableCornerButton::section {
+    background-color: #333; /* 设置左上角表头的背景颜色 */
+    color: white;           /* 设置左上角表头的文本颜色 */
+}</string>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::EditKeyPressed</set>
+         </property>
+        </widget>
+       </widget>
        <widget class="QWidget" name="page_central">
         <widget class="QPushButton" name="pushButton_onoff">
          <property name="geometry">
@@ -239,10 +286,11 @@ background:#333;
           <font>
            <family>century gothic</family>
            <pointsize>15</pointsize>
+           <bold>true</bold>
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background:red;</string>
+          <string notr="true">background:#B62B2B</string>
          </property>
          <property name="text">
           <string>ON/OFF</string>
@@ -536,7 +584,7 @@ background:#333;
          <property name="geometry">
           <rect>
            <x>36</x>
-           <y>317</y>
+           <y>327</y>
            <width>186</width>
            <height>24</height>
           </rect>
@@ -555,7 +603,7 @@ background:#333;
          <property name="geometry">
           <rect>
            <x>214</x>
-           <y>318</y>
+           <y>328</y>
            <width>51</width>
            <height>20</height>
           </rect>
@@ -574,7 +622,7 @@ background:#333;
          <property name="geometry">
           <rect>
            <x>270</x>
-           <y>320</y>
+           <y>330</y>
            <width>92</width>
            <height>20</height>
           </rect>
@@ -628,45 +676,32 @@ background:#333;
          </property>
         </widget>
        </widget>
-       <widget class="QWidget" name="page_branch">
-        <widget class="QTableWidget" name="tableWidget">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>0</y>
-           <width>581</width>
-           <height>431</height>
-          </rect>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">QTableWidget::item
-{
-color:white;
-background:#333;
-}
-
-QHeaderView::section {
-    background:#333; /* 设置表头的背景颜色 */
-    color: white;           /* 设置表头文本颜色 */
- 
-
-}
-
-QTableCornerButton::section {
-    background-color: #333; /* 设置左上角表头的背景颜色 */
-    color: white;           /* 设置左上角表头的文本颜色 */
-}</string>
-         </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::AnyKeyPressed|QAbstractItemView::EditKeyPressed</set>
-         </property>
-        </widget>
-       </widget>
       </widget>
      </widget>
     </item>
    </layout>
   </widget>
+  <widget class="QTextBrowser" name="textBrowser_3">
+   <property name="geometry">
+    <rect>
+     <x>-30</x>
+     <y>-10</y>
+     <width>1021</width>
+     <height>821</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>century gothic</family>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgba(255, 255, 255, 60);</string>
+   </property>
+  </widget>
+  <zorder>textBrowser_3</zorder>
+  <zorder>layoutWidget</zorder>
  </widget>
  <resources>
   <include location="../img.qrc"/>

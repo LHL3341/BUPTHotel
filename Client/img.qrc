@@ -3,6 +3,7 @@
     <file>images/background.jpg</file>
   </qresource>
   <qresource prefix="icon">
+    <file>sun.png</file>
     <file>images/xiaoren.png</file>
     <file>images/xiaohui.png</file>
   </qresource>

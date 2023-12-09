@@ -185,8 +185,8 @@ border-radius:0px;
    <widget class="QLabel" name="label_floor">
     <property name="geometry">
      <rect>
-      <x>130</x>
-      <y>147</y>
+      <x>100</x>
+      <y>150</y>
       <width>61</width>
       <height>24</height>
      </rect>
@@ -204,8 +204,8 @@ border-radius:0px;
    <widget class="QLabel" name="label_title">
     <property name="geometry">
      <rect>
-      <x>147</x>
-      <y>32</y>
+      <x>90</x>
+      <y>30</y>
       <width>328</width>
       <height>40</height>
      </rect>
@@ -219,11 +219,15 @@ border-radius:0px;
     <property name="font">
      <font>
       <family>century gothic</family>
-      <pointsize>18</pointsize>
+      <pointsize>15</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
      <string>Welcome to Bupt Hotel!</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QLabel" name="label_hello">
@@ -231,14 +235,14 @@ border-radius:0px;
      <rect>
       <x>23</x>
       <y>84</y>
-      <width>444</width>
+      <width>461</width>
       <height>30</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <family>century gothic</family>
-      <pointsize>15</pointsize>
+      <pointsize>13</pointsize>
      </font>
     </property>
     <property name="text">
@@ -279,8 +283,8 @@ border-radius:0px;
    <widget class="QLabel" name="label_room">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>197</y>
+      <x>20</x>
+      <y>190</y>
       <width>149</width>
       <height>24</height>
      </rect>
@@ -319,6 +323,22 @@ border-radius:0px;
     </size>
    </property>
   </widget>
+  <widget class="QTextBrowser" name="textBrowser_3">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>601</width>
+     <height>421</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgba(255, 255, 255, 60);</string>
+   </property>
+  </widget>
+  <zorder>textBrowser_3</zorder>
+  <zorder>frame</zorder>
+  <zorder>toolButton</zorder>
  </widget>
  <resources>
   <include location="../img.qrc"/>

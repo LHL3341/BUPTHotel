@@ -58,12 +58,14 @@ class UserControlUi(QWidget, Ui_UserControl):
             self.label_mode.setText(self.current_mode)
             
             self.pushButton_onoff.setText("OFF")
+            self.label_5.setText("ON")
 
         else:
             #self.lcdNumber.display(0)
             #self.label_mode.setText("")
-            self.label_speed.setText("")
+            #self.label_speed.setText("")
             self.pushButton_onoff.setText("ON")
+            self.label_5.setText("OFF")
         self.label_cost.setText(str(round(self.cost,2)))
         self.label_envtmp.setText(f"{round(self.current_temp,2)}")
         self.lcdNumber.display(self.target_temp)

@@ -121,11 +121,15 @@ border-bottom:1px solid #717072;
     <property name="font">
      <font>
       <family>century gothic</family>
-      <pointsize>18</pointsize>
+      <pointsize>15</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
      <string>Welcome to Bupt Hotel!</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButton_return">
@@ -141,6 +145,7 @@ border-bottom:1px solid #717072;
      <font>
       <family>century gothic</family>
       <pointsize>15</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
@@ -160,6 +165,7 @@ border-bottom:1px solid #717072;
      <font>
       <family>century gothic</family>
       <pointsize>15</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
@@ -169,16 +175,16 @@ border-bottom:1px solid #717072;
    <widget class="QLabel" name="label_username">
     <property name="geometry">
      <rect>
-      <x>50</x>
-      <y>105</y>
-      <width>106</width>
+      <x>40</x>
+      <y>110</y>
+      <width>111</width>
       <height>40</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <family>century gothic</family>
-      <pointsize>15</pointsize>
+      <pointsize>14</pointsize>
      </font>
     </property>
     <property name="text">
@@ -229,16 +235,16 @@ border-bottom:1px solid #717072;
    <widget class="QLabel" name="label_password">
     <property name="geometry">
      <rect>
-      <x>55</x>
-      <y>170</y>
-      <width>105</width>
+      <x>40</x>
+      <y>180</y>
+      <width>111</width>
       <height>40</height>
      </rect>
     </property>
     <property name="font">
      <font>
       <family>century gothic</family>
-      <pointsize>15</pointsize>
+      <pointsize>14</pointsize>
      </font>
     </property>
     <property name="lineWidth">
@@ -267,6 +273,60 @@ border-bottom:1px solid #717072;
      <string/>
     </property>
    </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>0</y>
+      <width>121</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>15</pointsize>
+      <italic>true</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: #B62B2B;</string>
+    </property>
+    <property name="text">
+     <string>BUPT</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>10</y>
+      <width>121</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>century gothic</family>
+      <pointsize>15</pointsize>
+      <italic>true</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
+    </property>
+    <property name="text">
+     <string> Hotel</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+   </widget>
   </widget>
   <widget class="QToolButton" name="toolButton">
    <property name="geometry">
@@ -291,6 +351,22 @@ border-bottom:1px solid #717072;
     </size>
    </property>
   </widget>
+  <widget class="QTextBrowser" name="textBrowser_3">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>601</width>
+     <height>421</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgba(255, 255, 255, 60);</string>
+   </property>
+  </widget>
+  <zorder>textBrowser_3</zorder>
+  <zorder>frame</zorder>
+  <zorder>toolButton</zorder>
  </widget>
  <resources>
   <include location="../img.qrc"/>

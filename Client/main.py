@@ -277,7 +277,7 @@ class Controller:
         workbook_detail = openpyxl.Workbook()
         # 获取默认的工作表
         sheet = workbook_detail.active
-        sheet.apeend('room_id','request_time','start_time','end_time','served_time','speed','cost','fee_rate','from_tem','to_tem')
+        sheet.append(['room_id','request_time','start_time','end_time','served_time','speed','cost','fee_rate','from_tem','to_tem'])
         # 遍历二维列表，并将数据写入到工作表的单元格中
         for row in res:
             sheet.append(row)
@@ -364,7 +364,7 @@ class Controller:
         res=response.text
         res=json.loads(res)
         self.manager_air.addItem(res)
-        self.manager_air.showscheduler()
+        #self.manager_air.showscheduler()
 
     def timer_event(self):
         if self.pos == 'guest':

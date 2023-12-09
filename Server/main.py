@@ -260,7 +260,7 @@ class Hotel:
                 else:
                     device.env_temperature -= slide
         if self.slice_num % TIMESLICE == 0 and self.slice_num!=0:
-            print("时间片",self.slice_num/TIMESLICE)
+            print("时间片",int(self.slice_num//TIMESLICE))
             print("服务队列：",[(self.central.scheduler.serving_list[i].roomid,self.central.scheduler.serving_list[i].speed)  for i in range(3) if self.central.scheduler.serving_list[i]!=None])
             print("等待队列：",[[room.roomid for room in self.central.scheduler.wait_list[i]]  for i in range(3) if self.central.scheduler.wait_list[i]!=None])
         self.slice_num +=1
@@ -326,7 +326,7 @@ async def timer_event():
             device = hotel.rooms[v.roomid].device
             device.total_cost += cost*WINDSPEED[device.speed]*(FREQ/TIMESLICE)
             v.cost += cost*WINDSPEED[device.speed]*(FREQ/TIMESLICE)
-            v.served_time += FREQ
+            v.served_time += (FREQ/TIMESLICE)
         
     # 调度
     hotel.Robin()
