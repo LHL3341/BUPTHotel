@@ -1,3 +1,5 @@
+# backend
+# written by szj
 import pymysql
 from typing import Optional
 from datetime import datetime

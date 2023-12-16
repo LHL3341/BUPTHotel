@@ -21,12 +21,17 @@ import openpyxl
 import json
 import re
 
-#SERVERADDR = 'http://10.129.182.238:10086'
-SERVERADDR = 'http://127.0.0.1:10086'
-FREQ = 3000
+SERVERADDR = 'http://10.129.182.238:10086'
+#SERVERADDR = 'http://10.29.44.230:8080'
+
+#SERVERADDR = 'http://127.0.0.1:10086'
+FREQ = 1000
 
 # 利用一个控制器来控制页面的跳转
+# Controller class to handle page transitions and functionalities
+# written by yhx
 class Controller:
+    # Initialize controller with user information and UI elements
     def __init__(self,username):
         self.username = username
         self.timer = QTimer()
@@ -66,7 +71,7 @@ class Controller:
         self.manager_bill.pushButton_printbill.clicked.connect(self.get_bill)
 
 
-
+    # Methods to handle different UI window transitions
     # 跳转到 hello 窗口
     def show_main(self):
         self.login.close()
@@ -141,6 +146,8 @@ class Controller:
         self.manager_bill.show()
 
     def log_in(self):
+        # Handle login functionality with validation
+        # yhx
         if self.login.lineEdit_username.text() == "1" and self.login.lineEdit_password.text() == "123":
             self.show_manager_air()
 
@@ -155,6 +162,9 @@ class Controller:
             self.login.lineEdit_password.clear()
 
     def select(self, index):
+        # Update room selection based on chosen floor
+        # yhx
+
         self.userselect.comboBox_room.clear()
         # 获取对应的房间号选项
 
@@ -166,6 +176,8 @@ class Controller:
 
 
     def change_list(self, index):
+        # Update room list based on floor selection in manager bill window
+        #yhx
 
         self.manager_bill.listWidget_room.clear()
         room_options = self.room_options.get(index, [])
@@ -179,6 +191,8 @@ class Controller:
         温度升 2
         温度降 3
         """
+        # Handle user control commands for a device
+        # LHL
         panel = self.usercontrol
         time = datetime.now()
         if (not panel.isopen) and option != 0:
@@ -239,6 +253,9 @@ class Controller:
         self.usercontrol.update_screen.emit()
         
     def central_control(self):
+        # Handle central control commands for air conditioning system
+        # LHL
+
         #TODO：非法输入检测
         window = self.manager_air
         
@@ -274,6 +291,9 @@ class Controller:
         self.usercontrol.update_screen.emit()
 
     def get_log(self):
+        # Retrieve and export log details to an Excel file
+        # szj
+
         # 前台打印详单，调用/log/{room_id}接口
         #response = requests.get(SERVERADDR +f'/bill_detail?guest_name={self.username}')
         #roomid = 
@@ -311,8 +331,11 @@ class Controller:
         workbook_detail.save(log_file_path_detail)
 
     def get_bill(self):
+        # Retrieve and export billing details to an Excel file
+        # szj
+        
         # 前台打印账单，调用@app.get('/cost/{room_id}')接口（接口需要自己实现）
-        response = requests.get(SERVERADDR+f'/bill_cost?guest_name={self.manager_bill.listWidget_room.currentItem().text()}')
+        response = requests.get(SERVERADDR+f'/bill_cost?guest_name={self.manager_bill.listWidget_room.currentItem().text()[4:-1]}')
         print(response.text)
         res = json.loads(response.text)
         if len(res)!=4:
@@ -337,6 +360,9 @@ class Controller:
         workbook_bill.save(log_file_path_bill)
 
     def check_out(self):
+        # Handle checkout process for a guest
+        # LHL
+
         # 前台退房，调用服务器@app.post('/{room_id}/check_out')接口
         #response = requests.post(SERVERADDR+f'/{room_id}/check_out')
         response = requests.post(SERVERADDR+f'/check_out?room_id={self.usercontrol.roomid[:3]}',json={"guest_name":self.username})
@@ -345,6 +371,9 @@ class Controller:
         print(self.usercontrol.roomid, '退房成功')
 
     def get_room_status(self, item):
+        # Retrieve and display the status of a selected room
+        # yhx
+
         # 前台查看房间状态，例如
         #response = requests.get(SERVERADDR+'/state/rooms/101')
         #res = json.loads(response.text)获取该房间状态
@@ -382,6 +411,9 @@ class Controller:
         self.manager_bill.tableWidget_status.setItem(5, 0, QTableWidgetItem(str(round(state.total_cost,2))))
 
     def monitor(self):
+        # Monitor the status of all devices/rooms
+        # zzyf
+
         # 空调管理员监控各空调状态，前端界面需要一目了然
         # 用@app.get('/state/rooms')接口获取空调状态
         #self.timer.start(FREQ)
@@ -392,6 +424,9 @@ class Controller:
         #self.manager_air.showscheduler()
 
     def timer_event(self):
+        # Define actions to be performed on timer events
+        # LHL
+
         if self.pos == 'guest':
             self.update_panel()
         elif self.pos == 'air_admin':

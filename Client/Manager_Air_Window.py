@@ -34,6 +34,8 @@ class ManagerAirUi(QWidget, Ui_Manager_Air):
 
 
     def addItem(self,res):
+        # written by zzyf
+        
         res = res["device_list"]
         if res == []:
             return

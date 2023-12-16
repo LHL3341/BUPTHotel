@@ -1,3 +1,5 @@
+# Server
+# written by LHL
 import os
 import sys
 sys.path.append(os.path.abspath('..'))
@@ -8,6 +10,8 @@ from copy import deepcopy
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 
+# Constants for default settings and configurations
+
 DEFAULT_TARGET_TEMP = 22
 TIMESLICE = 10   # 10秒当作1分钟，可调，如TIMESLICE=30,则30秒作一分钟
 FREQ = 1
@@ -16,9 +20,11 @@ SPEED = {'low':0,'mid':1,'high':2}
 WINDSPEED = {'low':0.33,'mid':0.5,'high':1}
 MODE = {'warm':1,'cold':0}
 
+# Class representing a hotel room
 class Room:
     #房间
     def __init__(self,id):
+        # Initialize room with default values and device status
         self.roomid = id
         self.isused = False
         self.default_tmp = 24
@@ -28,10 +34,12 @@ class Room:
         self.device = DeviceStatus(False,'warm',24,DEFAULT_TARGET_TEMP,'mid',0)
 
     def get_status(self):
+        # Get the current status of the room's device
         return self.device
         #return RoomStatus(self.checkin,self.checkout,self.device.is_on,self.device.last_update,self.device.mode
         #                  ,self.device.room,self.device.temperature,self.totalcost,self.device.wind_speed)
     def update_status(self,roomstatus):
+        # Update room status with given room status information
         self.checkin = roomstatus.check_in_time
         self.checkout = roomstatus.check_out_time
         self.device.is_on = roomstatus.is_on
@@ -42,6 +50,7 @@ class Room:
         self.device.wind_speed = roomstatus.wind_speed
     
     def update_device(self,devicetatus):
+         # Update the device status of the room
         self.device.working = devicetatus.working
         self.device.mode = devicetatus.mode
         self.device.env_temperature = devicetatus.env_temperature
@@ -50,6 +59,7 @@ class Room:
         self.device.total_cost = devicetatus.total_cost
 
     def Export_room_log(self,check_in,check_out):
+        # Export room log for a specified time period
     
         db = pymysql.connect(host="localhost", user=USER,password=PASSWORD,database=SCHEMAS)
         cur = db.cursor()
@@ -67,15 +77,22 @@ class Room:
             db.close()
 
     def turnon(self):
+        # Turn on the device in the room
         self.device.working=True
 
     def turnoff(self):
+        # Turn off the device in the room
         self.device.working=False
+
     def setspeed(self,speed):
+         # Set the speed of the device in the room
         self.device.speed =speed
+    
     def settemp(self,temp):
+        # Set the temperature of the device in the room
         self.device.target_temperature = temp
 
+# Class representing a task in the scheduler
 class Task:
     roomid:str
     speed:int
@@ -88,6 +105,7 @@ class Task:
     cost:float
     
     def __init__(self, roomid,speed,start_tmp):
+        # Initialize task with room ID, speed, and starting temperature
         self.request_time = datetime.now()
         self.roomid = roomid
         self.speed =speed
@@ -98,19 +116,23 @@ class Task:
         self.served_time = 0
         self.cost =0
 
+# Scheduler class for managing tasks
 class Scheduler:
     #调度器
     def __init__(self):
+        # Initialize scheduler with waiting and serving lists
         self.wait_list = {0:[],1:[],2:[]}
         self.serving_list = {0:None,1:None,2:None}#只有三个实例资源
     
     def isEmpty(self):
+        # Check if the scheduler has an empty slot
         for k,v in self.serving_list.items():
             if v == None:
                 return k
         return -1
     
     def isPreemptable(self,item):
+        # Check if a task can be preempted
         max = 0
         maxid = -1
         for i in range(3):
@@ -121,6 +143,7 @@ class Scheduler:
         return maxid
         
     def addItem(self,roomid,speed,env_tmp):
+        # Add a new task to the scheduler
         # 收到新的请求
         item = Task(roomid,speed,env_tmp)
         time = datetime.now()
@@ -142,6 +165,7 @@ class Scheduler:
             self.wait_list[speed].append(item)
         
     def RemoveItem(self,roomid):
+        # Remove a task from the scheduler
         for k,v in self.serving_list.items():
             if v != None and roomid == v.roomid:
                 self.serving_list[k] = None
@@ -168,6 +192,7 @@ class Scheduler:
                         j.remove(k)
 
     def Insert(self, priority=[2,1,0]):
+        # Insert tasks into empty slots based on priority
         i = self.isEmpty()
         if i == -1:
             return
@@ -182,10 +207,12 @@ class Scheduler:
                 break
 
     def Request(self,roomid,speed,env_tmp):
+        # Handle a new request
         item = Task(roomid,speed,env_tmp)
         self.wait_list[speed].append(item)        
 
     def clear(self):
+        # Clear all tasks from the scheduler
         for k, v in self.wait_list.items():
             for i in v:
                 self.RemoveItem(i.roomid)
@@ -195,29 +222,41 @@ class Scheduler:
         self.wait_list = {0:[],1:[],2:[]}
         self.serving_list = {0:None,1:None,2:None}
 
+# Class representing the central air conditioning system
 class CentralAir:
     #空调配置
     def __init__(self):
+        # Initialize the central air system with default settings
         self.scheduler = Scheduler()
         self.isopen = True  #总开关
         self.cost = 1 #费率
         self.limit = [16,24]  #温度范围
         self.mode = 'warm'
     def turnon(self):
+        # Turn on the central air system
         self.isopen=True
+        
+    # Turn off the central air system
     def turnoff(self):
         self.isopen=False
         self.scheduler.clear()
+
     def setfeerate(self,x):
+        # Set the fee rate for the central air system
         self.cost = x
     def setvalid(self,range):
+        # Set the valid temperature range for the central air system
         self.limit = range
+
     def setmode(self,mode):
+        # Set the mode of the central air system
         self.mode = mode
 
+# Class representing a hotel
 class Hotel:
     #酒店
     def __init__(self):
+         # Initialize the hotel with rooms and central air system
         self.test= 1
         self.central = CentralAir()   
         self.slice_num =0 
@@ -229,10 +268,13 @@ class Hotel:
                 else:
                     roomid = f'{layer}0{i}'
                 self.rooms.update({roomid:Room(roomid)})
+
     def getroomstate(self,roomid):
+        # Get the state of a specific room
         return self.rooms[roomid].get_status()
     
     def updateroom(self,roomstatus):
+        # Update room status based on roomstatus information
         roomid = roomstatus.room
         oldstatus = self.rooms[roomid].get_status()
         if not oldstatus.is_on and roomstatus.is_on:
@@ -248,6 +290,7 @@ class Hotel:
         
         
     def updatedevice(self,devicestatus):
+        # Update device status based on devicestatus information
         roomid = devicestatus.room
         oldstatus = self.rooms[roomid].get_status()
         if not oldstatus.is_on and devicestatus.is_on:
@@ -263,6 +306,7 @@ class Hotel:
         self.schedule()
     
     def Robin(self):
+        # Round-robin scheduling method
 
         for k,v in self.central.scheduler.serving_list.items():
             if v!=None and v.served_time%(TIMESLICE*2)==0 and v.served_time!=0:
@@ -272,6 +316,7 @@ class Hotel:
         self.central.scheduler.Insert()
     
     def update_temp(self):
+        # Update the temperature in all rooms
         interval = FREQ/TIMESLICE
         served = [self.central.scheduler.serving_list[i].roomid for i in range(3) if self.central.scheduler.serving_list[i]!=None]
         for k, v in self.rooms.items():
@@ -306,6 +351,7 @@ class Hotel:
         self.slice_num +=1
             
     def schedule(self):
+        # Schedule tasks for room devices
         room_ls = [self.scheduler.serving_list[i].roomid  for i in range(3) if self.scheduler.serving_list[i]!=None]
         for k, v in hotel.rooms.items():
             if v.device.room in room_ls and not v.device.is_on:
@@ -318,6 +364,7 @@ class Hotel:
                 v.device.last_update = datetime.now()
 
     def checkout(self,room_id,guest_name):
+        # Check out a guest from a room
         if not self.rooms[room_id].isused:
             room = self.rooms[room_id]
             room.isused = False
@@ -326,6 +373,7 @@ class Hotel:
             room.device = DeviceStatus(False,False,24,DEFAULT_TARGET_TEMP,'mid',0)
     
     def checkin(self,room_id,guest_name):
+        # Check in a guest into a room
         if not self.rooms[room_id].isused:
             room = self.rooms[room_id]
             room.isused = True
@@ -334,6 +382,7 @@ class Hotel:
             print(room.username+'入住')
 
     def remote_control(self,device_id, body):
+        # Remote control function for devices in rooms
         if self.test:
             self.test =0
             timer.start()
@@ -364,6 +413,7 @@ class Hotel:
             self.central.scheduler.addItem(device_id,SPEED[room.device.speed],room.device.env_temperature)
 
     def admin_control(self,command, args):
+        # Administrative control for the central air system
         if command == "turn_on":
             self.central.turnon()
         elif command == "turn_off":
@@ -384,7 +434,7 @@ class Hotel:
         elif command == "set_price":
             self.central.setfeerate(args["fee_rate"]) 
         
-
+# Function to simulate the hotel environment
 def simulate():
     
     #del hotel.rooms['101']
