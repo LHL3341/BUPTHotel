@@ -34,7 +34,11 @@ class ManagerAirUi(QWidget, Ui_Manager_Air):
 
 
     def addItem(self,res):
-        for i in range(40):
+        res = res["device_list"]
+        if res == []:
+            return
+        
+        for i in range(len(res)):
             room_status=res[i]
             self.tableWidget.setItem(i,0, QTableWidgetItem(res[i]["room_id"]))
             if res[i]["working"]:

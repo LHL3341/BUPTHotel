@@ -21,8 +21,9 @@ import openpyxl
 import json
 import re
 
+#SERVERADDR = 'http://10.129.182.238:10086'
 SERVERADDR = 'http://127.0.0.1:10086'
-FREQ = 600
+FREQ = 3000
 
 # 利用一个控制器来控制页面的跳转
 class Controller:
@@ -31,7 +32,7 @@ class Controller:
         self.timer = QTimer()
         self.timer.timeout.connect(self.timer_event)
         self.room_options = {
-            1: ['101(109c)', '102(109c2)', '103(113f)', '104(112b)', '105(112g)', '106', '107', '108', '109', '110'],
+            1: ['101(109c)', '102(111a)', '103(113f)', '104(112b)', '105(112g)', '106', '107', '108', '109', '110'],
             2: ['201', '202', '203', '204', '205', '206', '207', '208', '209', '210'],
             3: ['301', '302', '303', '304', '305', '306', '307', '308', '309', '310'],
             4: ['401', '402', '403', '404', '405', '406', '407', '408', '409', '410']
@@ -180,24 +181,34 @@ class Controller:
         """
         panel = self.usercontrol
         time = datetime.now()
-        response = requests.get(SERVERADDR +f'/get_device_status?device_id={device_id}')
-        response = json.loads(response.text)
-        past_state = DeviceStatus(**response)
-        speed = {'low':0,'mid':1,'high':2}
-        arg = {
-            "current_room_temp":past_state.env_temperature,
-            "target_temp":past_state.target_temperature,
-            "speed":past_state.speed
-        }
-
-        if (not past_state.working) and option != 0:
+        if (not panel.isopen) and option != 0:
             return
+        if panel.flag:
+            response = requests.get(SERVERADDR +f'/get_device_status?device_id={device_id}')
+            response = json.loads(response.text)
+            if 'current_cost' in response.keys():
+                del response['current_cost']
+            past_state = DeviceStatus(**response)
+            speed = {'low':0,'mid':1,'high':2}
+            arg = {
+                "current_room_temp":past_state.env_temperature,
+                "target_temp":past_state.target_temperature,
+                "speed":past_state.speed
+            }
+            
+
+        else:
+            past_state = DeviceStatus(False,True,22,22,'mid',0)
+            arg = {}
+            panel.flag = 1
+
         if option == 0:
             past_state.working = (past_state.working+1)%2
             if past_state.working:
                 response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'turn_on',"args":arg})
             else:
                 response = requests.post(SERVERADDR +f'/remote_control?device_id={device_id}',json={"command":'turn_off',"args":arg})
+                panel.flag = 0
         elif option ==1:
             if past_state.speed == 'low':
                 past_state.speed = 'mid'
@@ -218,7 +229,10 @@ class Controller:
 
         panel.isopen = past_state.working
         panel.current_speed = past_state.speed
-        panel.current_mode = past_state.mode
+        if past_state.mode:
+            panel.current_mode = 'warm'
+        else:
+            panel.current_mode = 'cold'
         panel.cost = past_state.total_cost
         panel.target_temp = past_state.target_temperature
         panel.current_temp = past_state.env_temperature
@@ -239,14 +253,18 @@ class Controller:
         requests.post(SERVERADDR+'/admin_control',json={"command":'set_valid_range',"args":arg})
         requests.post(SERVERADDR+'/admin_control',json={"command":'set_mode',"args":arg})
         requests.post(SERVERADDR+'/admin_control',json={"command":'turn_on',"args":arg})
-        requests.post(SERVERADDR+'/admin_control',json={"command":'turn_off',"args":arg})
+        #requests.post(SERVERADDR+'/admin_control',json={"command":'turn_off',"args":arg})
         requests.post(SERVERADDR+'/admin_control',json={"command":'set_price',"args":arg})
 
     def update_panel(self):
         panel = self.usercontrol
         time = datetime.now()
+        if panel.flag:
+            pass
         response = requests.get(SERVERADDR +f'/get_device_status?device_id={panel.roomid}')
         response = json.loads(response.text)
+        if 'current_cost' in response.keys():
+            del response['current_cost']
         past_state = DeviceStatus(**response)
         panel.cost = past_state.total_cost
         panel.isopen = past_state.working
@@ -262,9 +280,9 @@ class Controller:
         #response = requests.get(SERVERADDR+'/log/{room_id}')
         #print(response.text)
         #res = json.loads(response.text)
-        response = requests.get(SERVERADDR+f'/bill_detail?guest_name={self.manager_bill.listWidget_room.currentItem().text()}')
+        response = requests.get(SERVERADDR+f'/bill_detail?guest_name={self.manager_bill.listWidget_room.currentItem().text()[4:-1]}')
         #print(response.text)
-        res = json.loads(response.text)
+        res = json.loads(response.text)['detail_list']
         if type(res)!=list:
             return
         
@@ -277,10 +295,17 @@ class Controller:
         workbook_detail = openpyxl.Workbook()
         # 获取默认的工作表
         sheet = workbook_detail.active
-        sheet.append(['room_id','request_time','start_time','end_time','served_time','speed','cost','fee_rate','from_tem','to_tem'])
+        row1 = ['room_id','request_time','start_time','end_time','duration','speed','period_cost','fee_rate','from_tem','to_tem']
+        sheet.append(row1)
         # 遍历二维列表，并将数据写入到工作表的单元格中
         for row in res:
-            sheet.append(row)
+            r = row1.copy()
+            for k,v in row.items():
+                if k in row1:
+                    i = row1.index(k)
+                    r[i] = v
+                    r[0] = self.manager_bill.listWidget_room.currentItem().text()[:3]
+            sheet.append(r)
 
         # 保存工作簿
         workbook_detail.save(log_file_path_detail)
@@ -314,7 +339,7 @@ class Controller:
     def check_out(self):
         # 前台退房，调用服务器@app.post('/{room_id}/check_out')接口
         #response = requests.post(SERVERADDR+f'/{room_id}/check_out')
-        response = requests.post(SERVERADDR+f'/check_in?room_id={self.usercontrol.roomid[:3]}',json={"guest_name":self.username})
+        response = requests.post(SERVERADDR+f'/check_out?room_id={self.usercontrol.roomid[:3]}',json={"guest_name":self.username})
         
         print(response.text)
         print(self.usercontrol.roomid, '退房成功')
@@ -378,22 +403,26 @@ if __name__ == '__main__':
     try:
         response = requests.get(SERVERADDR)
         print(response.text)
-        response = requests.get(SERVERADDR+'/get_all_device_status')
-        print(response.text)
-        response = requests.get(SERVERADDR+'/get_device_status?device_id=101')
-        print(response.text)
+        #response = requests.get(SERVERADDR+'/get_all_device_status')
+        #print(response.text)
+        #response = requests.get(SERVERADDR+'/get_device_status?device_id=101')
+        #print(response.text)
         QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
         app = QApplication(sys.argv)
         controller = Controller('101(109c)')
         controller.show_main()
-        controller1 = Controller('102(109c2)')
-        controller1.show_main()
-        controller2 = Controller('103(113f)')
-        controller2.show_main()
-        controller3 = Controller('104(112b)')
-        controller3.show_main()
-        controller4 = Controller('105(112g)')
-        controller4.show_main()
+        #controller1 = Controller('102(109c2)')
+        #controller1.show_main()
+        #controller2 = Controller('103(113f)')
+        #controller2.show_main()
+        #controller3 = Controller('104(112b)')
+        #controller3.show_main()
+        #controller4 = Controller('105(112g)')
+        #controller4.show_main()
+        #controller5 = Controller('前台')
+        #controller5.show_main()
+        #controller6 = Controller('空调管理员')
+        #controller6.show_main()
         sys.exit(app.exec_())
 
     except Exception as e:

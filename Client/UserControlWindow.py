@@ -12,6 +12,7 @@ class UserControlUi(QWidget, Ui_UserControl):
         super().__init__()
         self.setupUi(self)
         self.roomid = ''
+        self.flag = 1
         self.isopen = 0
         self.cost = 0
         self.current_mode = 'warm'
